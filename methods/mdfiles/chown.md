@@ -1,3 +1,4 @@
+description: This can be run with elevated privileges to change ownership and then read, write, or execute a file.
 functions:
   suid:
     - code: |

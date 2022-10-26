@@ -1,3 +1,4 @@
+functions:
   suid:
     - code: |
         ./chroot / /bin/sh -p

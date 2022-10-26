@@ -1,3 +1,4 @@
+description: The file content is treated as command line options and disclosed throught error messages, so this is not suitable to read arbitrary binary data.
 functions:
   file-read:
     - code: |

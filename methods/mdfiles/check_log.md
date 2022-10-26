@@ -1,3 +1,4 @@
+description: |
   This is the `check_log` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`.
 functions:
   file-read:

@@ -1,3 +1,4 @@
+description: Dump the bytes of the input file that are different from the NUL byte in a tabular format, hence this may not be suitable to read arbitrary binary files.
 functions:
   file-read:
     - code: |

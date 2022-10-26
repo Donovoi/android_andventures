@@ -1,3 +1,4 @@
+description: |
   This is the `check_by_ssh` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`.
 functions:
   shell:

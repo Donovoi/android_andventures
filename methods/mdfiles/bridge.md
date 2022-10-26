@@ -1,3 +1,4 @@
+description: Outputs the first line of the file (until the first whitespace) inside an error message to stdandard error.
 functions:
   file-read:
     - code: |

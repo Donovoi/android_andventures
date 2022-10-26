@@ -1,3 +1,4 @@
+description: Outputs the first line of the file to standard error without the `-` and `#` characters, this can be customized with the `-c` option, by default is `-c -#`.
 functions:
   file-read:
     - code: |

@@ -1,3 +1,4 @@
+description: Note that the subprocess is immediately sent to the background.
 functions:
   command:
     - code: |

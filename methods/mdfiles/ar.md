@@ -1,3 +1,4 @@
+description: The file appears amid the binary content of the archive.
 functions:
   file-read:
     - code: |

@@ -16,17 +16,15 @@ mkdir -p methods
 #First we need to get a list of all the files we need to download.
 # The md files are listed on this page https://github.com/GTFOBins/GTFOBins.github.io/tree/master/_gtfobins
 #First check to make sure methods/gtfobins.html doesnt already exist, if it does, then delete it.
-if [ -f methods/gtfobins.html ]; then
-    rm methods/gtfobins.html
+if [ -d methods/ ]; then
+    rm -rf methods/
 fi
 
-if [ -f methods/gtfobins.txt ]; then
-    rm methods/gtfobins.txt
-fi
+# recreate the folder structure
+mkdir -p methods/commands
+mkdir -p methods/mdfiles
 
-# if [ -f methods/mdfiles/ ]; then
-#     rm -rf methods/mdfiles/
-# fi
+
 # We will use curl to get the page, and then grep to find the links that end in .md
 curl https://github.com/GTFOBins/GTFOBins.github.io/tree/master/_gtfobins -o methods/gtfobins.html
 # We will use grep to find the links that end in .md
@@ -85,18 +83,50 @@ for file in methods/mdfiles/*.md; do
     done < $file
 done
 
-# touch methods/commands/allcommands.txt
+#Now we need to understand how the functions are structured, and how to run them.
+#the different possible functions and how they appear in the .txt files are:
+#Shell - "shell:"
+#Command - "command:"
+#Reverse shell - "reverse-shell:"
+#Non-interactive reverse shell - "non-interactive-reverse-shell:"
+#Bind shell - "bind-shell:"
+#Non-interactive bind shell - "non-interactive-bind-shell:" 
+#File upload - "file-upload:"
+#File download - "file-download:"
+#File write - "file-write:"
+#File read - "file-read:"
+#Library load - "library-load:"
+#SUID - "suid:"
+#Sudo - "sudo:"
+#Capabilities - "capabilities:"
+#Limited SUID - "limited-suid:"
 
-# # We will loop through each file in methods/mdfiles, and grep for the commands.
-# for file in methods/mdfiles/*; do
-#     # get the function name from the file name.
-#     function=$(basename $file)
-#     # remove the .md from the function name
-#     function=${function%.*}
-#     # create a file for the function
-#     touch methods/commands/$function.txt
-#     # grep for the commands
-#     grep -oP '(?<=```).*(?=```)' $file >> methods/commands/$function.txt
-#     # append the commands to the allcommands.txt file
-#     cat methods/commands/$function.txt >> methods/commands/allcommands.txt
-# done
+# We need to create a function for each of the above functions. We we have seperate directories for each type of function.
+# When creating the functions, we need to ignore the allcommands.txt file.
+
+$folderarray = "shell", "command", "reverse-shell", "non-interactive-reverse-shell", "bind-shell", "non-interactive-bind-shell", "file-upload", "file-download", "file-write", "file-read", "library-load", "suid", "sudo", "capabilities", "limited-suid"
+
+for folder in $folderarray; do
+    if [ -d methods/$folder ]; then
+        if [ "$(ls -A methods/$folder)" ]; then
+            echo "The directory methods/$folder already exists and has files in it. Delete it if you want to recreate the files."
+        fi
+    else
+        mkdir -p methods/$folder
+    fi
+done
+
+# We need to create txt files for each function, and then append the commands to the correct file.
+for file in methods/commands/*.txt; do
+    # Get the function name from the file name.
+    functionname=$(basename $file)
+    # Remove the .md from the end of the file name.
+    functionname="${functionname%.*}"
+    # Now we need to append the commands to the correct file.
+    while read -r line; do
+        echo $line >> methods/$folder/$functionname.txt
+    done < $file
+done
+
+
+

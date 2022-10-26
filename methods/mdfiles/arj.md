@@ -1,3 +1,4 @@
+functions:
   file-read:
     - description: The file appears amid some other textual information. The archive can also be downloaded then extracted offline.
       code: |

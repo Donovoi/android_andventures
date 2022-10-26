@@ -1,3 +1,4 @@
+functions:
   shell:
     - code: ash
   file-write:

@@ -1,3 +1,4 @@
+functions:
   shell:
     - code: |
         TF=$(mktemp)

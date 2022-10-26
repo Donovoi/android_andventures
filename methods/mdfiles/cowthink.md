@@ -1,3 +1,4 @@
+description: It allows to execute [`perl`](/gtfobins/perl) code, other functions may apply.
 functions:
   shell:
     - code: |

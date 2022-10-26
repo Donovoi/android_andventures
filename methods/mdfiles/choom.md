@@ -1,3 +1,4 @@
+functions:
   shell:
     - code: choom -n 0 /bin/sh
   suid:

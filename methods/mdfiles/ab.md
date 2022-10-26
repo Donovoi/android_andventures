@@ -1,3 +1,4 @@
+functions:
   file-upload:
     - description: Upload local file via HTTP POST request.
       code: |

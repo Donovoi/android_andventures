@@ -1,3 +1,4 @@
+functions:
   file-read:
     - code: |
         LFILE=file_to_read

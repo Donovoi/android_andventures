@@ -1,3 +1,4 @@
+description: |
   This is the `check_cups` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`. The read file content is limited to the first line.
 functions:
   file-read:
